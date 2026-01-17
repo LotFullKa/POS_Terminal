@@ -17,8 +17,8 @@ else:
     bundle_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, bundle_dir)
 
-HOST = "127.0.0.1"
-PORT = 8000
+HOST = os.getenv("HOST", "0.0.0.0")  # 0.0.0.0 для облака, 127.0.0.1 для локального
+PORT = int(os.getenv("PORT", "8080"))  # 8080 для Fly.io, 8000 для локального
 
 
 def wait_until_ready(url: str, timeout_sec: float = 10.0) -> bool:

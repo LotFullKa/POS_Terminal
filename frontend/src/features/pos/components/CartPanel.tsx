@@ -8,6 +8,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import InfoIcon from "@mui/icons-material/Info";
 import { usePosStore } from "../store";
 import { OrderCard } from "./OrderCard";
+import { EndDayButton } from "./EndDayButton";
 import { useState } from "react";
 
 const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
@@ -188,18 +189,22 @@ export function CartPanel() {
         </List>
       </Paper>
 
-      {/* Переключатель статуса */}
-      <Paper variant="outlined" sx={{ p: 1 }}>
-        <ToggleButtonGroup
-          fullWidth
-          exclusive
-          value={statusFilter}
-          onChange={(_, v) => v && setStatusFilter(v)}
-        >
-          <ToggleButton value="NEW">Новый чек</ToggleButton>
-          <ToggleButton value="HANDOFF">Отдам</ToggleButton>
-        </ToggleButtonGroup>
-      </Paper>
+      {/* Переключатель статуса и кнопка закрытия дня */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Paper variant="outlined" sx={{ p: 1 }}>
+          <ToggleButtonGroup
+            fullWidth
+            exclusive
+            value={statusFilter}
+            onChange={(_, v) => v && setStatusFilter(v)}
+          >
+            <ToggleButton value="NEW">Новый чек</ToggleButton>
+            <ToggleButton value="HANDOFF">Отдам</ToggleButton>
+          </ToggleButtonGroup>
+        </Paper>
+
+        <EndDayButton />
+      </Box>
 
       <OrderCard
         order={viewOrder ? orders[viewOrder] : null}

@@ -1,3 +1,5 @@
+import sys
+import os
 import threading
 import time
 import webbrowser
@@ -5,6 +7,15 @@ import urllib.request
 
 import uvicorn
 
+# Для PyInstaller: добавляем путь к упакованным модулям
+if getattr(sys, "frozen", False):
+    # Если запущено из PyInstaller
+    bundle_dir = sys._MEIPASS
+    sys.path.insert(0, bundle_dir)
+else:
+    # Если запущено напрямую
+    bundle_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, bundle_dir)
 
 HOST = "127.0.0.1"
 PORT = 8000
@@ -22,8 +33,11 @@ def wait_until_ready(url: str, timeout_sec: float = 10.0) -> bool:
 
 
 def run():
+    # Импортируем app напрямую вместо строки
+    from app.main import app as fastapi_app
+
     config = uvicorn.Config(
-        "app.main:app",
+        fastapi_app,  # Передаём объект напрямую
         host=HOST,
         port=PORT,
         log_level="info",

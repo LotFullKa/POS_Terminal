@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Order, OrderStatus, Page, Product, Category } from "./types";
 import { api } from "./api";
+import { generateFunnyOrderName } from "./orderNameGenerator";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -63,7 +64,7 @@ export const usePosStore = create<State>()((set, get) => ({
     const id = uid();
     const order: Order = {
       id,
-      name: `Заказ #${id}`,
+      name: generateFunnyOrderName(),
       comment: "",
       status: "NEW",
       createdAt: Date.now(),
@@ -98,7 +99,7 @@ export const usePosStore = create<State>()((set, get) => ({
         s.orders[orderId] ??
         ({
           id: orderId,
-          name: `Заказ #${orderId}`,
+          name: generateFunnyOrderName(),
           comment: "",
           status: "NEW",
           createdAt: Date.now(),

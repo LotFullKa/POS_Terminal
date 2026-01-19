@@ -1,11 +1,13 @@
 import {
   Box, Paper, Typography, List, ListItem, ListItemText,
   IconButton, Divider, Button, ToggleButton, ToggleButtonGroup,
-  TextField
+  TextField, Collapse
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import InfoIcon from "@mui/icons-material/Info";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { usePosStore } from "../store";
 import { OrderCard } from "./OrderCard";
 import { EndDayButton } from "./EndDayButton";
@@ -32,6 +34,19 @@ export function CartPanel() {
   const cancelOrder = usePosStore((s) => s.cancelOrder);
 
   const [viewOrder, setViewOrder] = useState<string | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (orderId: string) => {
+    setExpandedOrders((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+      } else {
+        next.add(orderId);
+      }
+      return next;
+    });
+  };
 
   const current = currentOrderId ? orders[currentOrderId] : null;
 
@@ -46,9 +61,6 @@ export function CartPanel() {
     <Box sx={{ height: "100vh", p: 2, display: "grid", gridTemplateRows: "auto 1fr auto", gap: 2 }}>
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-          <Typography variant="h6" sx={{ flex: 1 }}>
-            Текущий заказ
-          </Typography>
           <Button variant="contained" onClick={() => newOrder()}>
             Новый
           </Button>
@@ -132,7 +144,7 @@ export function CartPanel() {
             onClick={() => current && cancelOrder(current.id)}
             disabled={!current}
           >
-            Отменить
+            Удалить
           </Button>
 
           <Button
@@ -152,33 +164,98 @@ export function CartPanel() {
         </Typography>
 
         <List dense>
-          {filteredOrders.map((o) => (
-            <ListItem
-              key={o.id}
-              onClick={() => selectOrder(o.id)}
-              sx={{
-                cursor: "pointer",
-                borderRadius: 1,
-                bgcolor: o.id === currentOrderId ? "action.selected" : "transparent",
-              }}
-              secondaryAction={
-                <IconButton
-                  edge="end"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setViewOrder(o.id);
+          {filteredOrders.map((o) => {
+            const orderLines = Object.values(o.lines);
+            const orderTotal = orderLines.reduce((sum, l) => sum + l.price * l.qty, 0);
+            const isExpanded = expandedOrders.has(o.id);
+
+            return (
+              <Box key={o.id} sx={{ mb: 1 }}>
+                <ListItem
+                  onClick={() => selectOrder(o.id)}
+                  sx={{
+                    cursor: "pointer",
+                    borderRadius: 1,
+                    bgcolor: o.id === currentOrderId ? "action.selected" : "transparent",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    py: 1,
                   }}
                 >
-                  <InfoIcon />
-                </IconButton>
-              }
-            >
-              <ListItemText
-                primary={o.name}
-                secondary={new Date(o.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-              />
-            </ListItem>
-          ))}
+                  <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {o.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(o.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} • {money(orderTotal)} ₽
+                        {o.isPaid && " • ✓ Оплачен"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpanded(o.id);
+                        }}
+                      >
+                        {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewOrder(o.id);
+                        }}
+                      >
+                        <InfoIcon />
+                      </IconButton>
+                    </Box>
+                  </Box>
+
+                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <Box sx={{ mt: 1, pl: 1, borderLeft: 2, borderColor: "divider" }}>
+                      {o.comment && (
+                        <Box sx={{ mb: 1, p: 1, bgcolor: "action.hover", borderRadius: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
+                            💬 Комментарий:
+                          </Typography>
+                          <Typography variant="caption" sx={{ whiteSpace: "pre-wrap" }}>
+                            {o.comment}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
+                        🛒 Позиции ({orderLines.length}):
+                      </Typography>
+                      {orderLines.map((l) => (
+                        <Box
+                          key={l.productId}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            py: 0.5,
+                            px: 1,
+                            "&:hover": { bgcolor: "action.hover" },
+                            borderRadius: 0.5,
+                          }}
+                        >
+                          <Typography variant="caption">
+                            {l.name} × {l.qty}
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                            {money(l.price * l.qty)} ₽
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Collapse>
+                </ListItem>
+              </Box>
+            );
+          })}
           {filteredOrders.length === 0 && (
             <Typography sx={{ color: "text.secondary", p: 1 }}>
               Нет заказов
@@ -195,8 +272,8 @@ export function CartPanel() {
             value={statusFilter}
             onChange={(_, v) => v && setStatusFilter(v)}
           >
-            <ToggleButton value="NEW">Новый чек</ToggleButton>
-            <ToggleButton value="HANDOFF">Отдам</ToggleButton>
+            <ToggleButton value="NEW">Очередь</ToggleButton>
+            <ToggleButton value="HANDOFF">Отдали</ToggleButton>
           </ToggleButtonGroup>
         </Paper>
 

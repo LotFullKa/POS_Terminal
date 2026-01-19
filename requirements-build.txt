@@ -1,14 +1,11 @@
-# Основные зависимости приложения
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-sqlalchemy==2.0.23
-pydantic==2.5.0
+Django==4.2.9
+django-cors-headers==4.3.1
+PyJWT==2.8.0
 
-# Google Sheets интеграция (опционально)
 google-auth==2.25.2
 google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
 google-api-python-client==2.110.0
 
 # Для сборки
-pyinstaller==6.3.0
+pyinstaller==6.18.0

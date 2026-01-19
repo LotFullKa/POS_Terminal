@@ -1,17 +1,21 @@
 export type Page = string;
 
 export type Category = {
-  id: string;
-  label: string;
+  id: number;
+  name: string;
+  slug: string;
+  order: number;
 };
 
 export type OrderStatus = "NEW" | "HANDOFF";
 
 export type Product = {
-  id: string;
+  id: number | string;
   name: string;
   price: number;
-  page: Page;
+  category_id?: number;
+  is_active?: boolean;
+  page?: string;
 };
 
 export type CartLine = {

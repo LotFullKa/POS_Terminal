@@ -1,14 +1,8 @@
 import sys
+import os
 from pathlib import Path
-
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-
-from .api import router as api_router
-
-app = FastAPI()
-app.include_router(api_router, prefix="/api")
+from django.http import FileResponse, Http404
+from django.views.decorators.http import require_http_methods
 
 
 def get_dist_dir() -> Path:
@@ -21,20 +15,23 @@ def get_dist_dir() -> Path:
 
 DIST_DIR = get_dist_dir()
 
-# assets
-assets_dir = DIST_DIR / "assets"
-if assets_dir.exists():
-    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+@require_http_methods(["GET"])
+def serve_frontend(request, path=""):
+    # Если путь начинается с api/, возвращаем 404
+    if path.startswith("api/"):
+        raise Http404("API endpoint not found")
 
-@app.get("/{full_path:path}")
-def spa(full_path: str):
-    # чтобы "битые" /api/* не возвращали index.html
-    if full_path.startswith("api/"):
-        raise HTTPException(status_code=404, detail="Not found")
+    # Если запрашивается конкретный файл (с расширением), пытаемся его отдать
+    if "." in path.split("/")[-1]:
+        file_path = DIST_DIR / path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(open(file_path, "rb"))
+        raise Http404("File not found")
 
-    index = DIST_DIR / "index.html"
-    if index.exists():
-        return FileResponse(index)
+    # Для всех остальных путей (SPA роутинг) отдаём index.html
+    index_path = DIST_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(open(index_path, "rb"))
 
-    return {"error": "Frontend dist not found. Build React and place into app/dist."}
+    raise Http404("Frontend not built. Run: cd frontend && npm run build")

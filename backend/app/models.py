@@ -1,56 +1,116 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-
-Base = declarative_base()
+from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 
 
-class DailySummary(Base):
-    """Сводка за день"""
+class User(models.Model):
+    ROLE_CHOICES = [
+        ("admin", "Администратор"),
+        ("user", "Пользователь"),
+    ]
 
-    __tablename__ = "daily_summaries"
+    username = models.CharField(max_length=150, unique=True, db_index=True)
+    password_hash = models.CharField(max_length=255)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="user")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(String, unique=True, index=True)  # YYYY-MM-DD
-    total_revenue = Column(Float, default=0.0)
-    total_orders = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    class Meta:
+        db_table = "users"
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
 
-    orders = relationship("Order", back_populates="daily_summary")
+    def set_password(self, raw_password):
+        self.password_hash = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password_hash)
+
+    def __str__(self):
+        return f"{self.username} ({self.get_role_display()})"
 
 
-class Order(Base):
-    """Заказ"""
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.CharField(max_length=100, unique=True, db_index=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    __tablename__ = "orders"
+    class Meta:
+        db_table = "categories"
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
+        ordering = ["order", "name"]
 
-    id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(String, index=True)  # ID из frontend
-    name = Column(String)
-    comment = Column(Text, nullable=True)
-    status = Column(String)  # NEW, HANDOFF
-    total = Column(Float)
-    is_paid = Column(Integer)  # 0 или 1 (SQLite не имеет Boolean)
-    created_at = Column(DateTime)
-    daily_summary_id = Column(Integer, ForeignKey("daily_summaries.id"))
+    def __str__(self):
+        return self.name
 
-    daily_summary = relationship("DailySummary", back_populates="orders")
-    lines = relationship(
-        "OrderLine", back_populates="order", cascade="all, delete-orphan"
+
+class Product(models.Model):
+    name = models.CharField(max_length=255)
+    price = models.FloatField()
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, related_name="products"
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "products"
+        verbose_name = "Продукт"
+        verbose_name_plural = "Продукты"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} - {self.price}₽"
+
+
+class DailySummary(models.Model):
+    date = models.CharField(max_length=10, unique=True, db_index=True)
+    total_revenue = models.FloatField(default=0.0)
+    total_orders = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "daily_summaries"
+        verbose_name = "Дневная сводка"
+        verbose_name_plural = "Дневные сводки"
+
+    def __str__(self):
+        return f"Сводка за {self.date}"
+
+
+class Order(models.Model):
+    order_id = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255)
+    comment = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=50)
+    total = models.FloatField()
+    is_paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField()
+    daily_summary = models.ForeignKey(
+        DailySummary, on_delete=models.CASCADE, related_name="orders"
     )
 
+    class Meta:
+        db_table = "orders"
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
 
-class OrderLine(Base):
-    """Позиция в заказе"""
+    def __str__(self):
+        return f"Заказ {self.name} ({self.order_id})"
 
-    __tablename__ = "order_lines"
 
-    id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, ForeignKey("orders.id"))
-    product_id = Column(String)
-    name = Column(String)
-    price = Column(Float)
-    qty = Column(Integer)
+class OrderLine(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="lines")
+    product_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    price = models.FloatField()
+    qty = models.IntegerField()
 
-    order = relationship("Order", back_populates="lines")
+    class Meta:
+        db_table = "order_lines"
+        verbose_name = "Позиция заказа"
+        verbose_name_plural = "Позиции заказов"
+
+    def __str__(self):
+        return f"{self.name} x{self.qty}"

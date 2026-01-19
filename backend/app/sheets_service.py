@@ -1,5 +1,3 @@
-"""Сервис для работы с Google Sheets"""
-
 from datetime import datetime
 from typing import Optional
 import json
@@ -16,8 +14,6 @@ from .config import GOOGLE_CREDENTIALS_JSON, GOOGLE_SHEET_ID, GOOGLE_SHEET_NAME
 
 
 class GoogleSheetsService:
-    """Сервис для записи данных в Google Sheets"""
-
     def __init__(self):
         self.sheet_id = GOOGLE_SHEET_ID
         self.sheet_name = GOOGLE_SHEET_NAME
@@ -51,19 +47,6 @@ class GoogleSheetsService:
         paid_orders: int,
         unpaid_orders: int,
     ) -> bool:
-        """
-        Добавляет строку с дневным отчётом в таблицу
-
-        Args:
-            date: Дата в формате YYYY-MM-DD
-            total_revenue: Общая выручка за день
-            total_orders: Количество заказов
-            paid_orders: Количество оплаченных заказов
-            unpaid_orders: Количество неоплаченных заказов
-
-        Returns:
-            True если успешно, False если ошибка
-        """
         if not self.service:
             print("⚠️  Google Sheets не настроен, пропускаем запись")
             return False
@@ -110,7 +93,6 @@ class GoogleSheetsService:
             return False
 
     def _ensure_sheet_exists(self):
-        """Проверяет существование листа и создаёт его при необходимости"""
         try:
             # Получаем информацию о таблице
             spreadsheet = (

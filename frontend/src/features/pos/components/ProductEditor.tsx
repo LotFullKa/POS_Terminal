@@ -21,21 +21,22 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { useState } from "react";
 import { usePosStore } from "../store";
+import { useAuthStore } from "../authStore";
 import type { Product } from "../types";
 
 type ProductFormData = {
   name: string;
   price: string;
-  page: string;
+  category_id: string;
 };
 
 export function ProductEditor() {
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | string | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     price: "",
-    page: "drinks",
+    category_id: "",
   });
 
   const products = usePosStore((s) => s.products);
@@ -43,12 +44,13 @@ export function ProductEditor() {
   const addProduct = usePosStore((s) => s.addProduct);
   const updateProduct = usePosStore((s) => s.updateProduct);
   const deleteProduct = usePosStore((s) => s.deleteProduct);
+  const isAdmin = useAuthStore((s) => s.isAdmin());
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
     setEditingId(null);
-    setFormData({ name: "", price: "", page: categories[0]?.id ?? "" });
+    setFormData({ name: "", price: "", category_id: String(categories[0]?.id ?? "") });
   };
 
   const handleEdit = (product: Product) => {
@@ -56,37 +58,50 @@ export function ProductEditor() {
     setFormData({
       name: product.name,
       price: product.price.toString(),
-      page: product.page,
+      category_id: String(product.category_id),
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const price = parseFloat(formData.price);
-    if (!formData.name || isNaN(price) || price <= 0) return;
+    const category_id = parseInt(formData.category_id);
+    if (!formData.name || isNaN(price) || price <= 0 || isNaN(category_id)) return;
 
-    if (editingId) {
-      updateProduct(editingId, {
-        name: formData.name,
-        price,
-        page: formData.page,
-      });
-    } else {
-      addProduct({
-        name: formData.name,
-        price,
-        page: formData.page,
-      });
+    try {
+      if (editingId) {
+        await updateProduct(editingId, {
+          name: formData.name,
+          price,
+          category_id,
+        });
+      } else {
+        await addProduct({
+          name: formData.name,
+          price,
+          category_id,
+        });
+      }
+
+      setEditingId(null);
+      setFormData({ name: "", price: "", category_id: String(categories[0]?.id ?? "") });
+    } catch {
+      alert("Ошибка при сохранении продукта");
     }
-
-    setEditingId(null);
-    setFormData({ name: "", price: "", page: categories[0]?.id ?? "" });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: number | string) => {
     if (confirm("Удалить этот продукт?")) {
-      deleteProduct(id);
+      try {
+        await deleteProduct(id);
+      } catch {
+        alert("Ошибка при удалении продукта");
+      }
     }
   };
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <>
@@ -129,15 +144,15 @@ export function ProductEditor() {
               <FormControl size="small" sx={{ flex: 1 }}>
                 <InputLabel>Категория</InputLabel>
                 <Select
-                  value={formData.page}
+                  value={formData.category_id}
                   label="Категория"
                   onChange={(e) =>
-                    setFormData({ ...formData, page: e.target.value })
+                    setFormData({ ...formData, category_id: e.target.value })
                   }
                 >
                   {categories.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.id}>
-                      {cat.label}
+                    <MenuItem key={cat.id} value={String(cat.id)}>
+                      {cat.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -154,7 +169,7 @@ export function ProductEditor() {
                   variant="outlined"
                   onClick={() => {
                     setEditingId(null);
-                    setFormData({ name: "", price: "", page: categories[0]?.id ?? "" });
+                    setFormData({ name: "", price: "", category_id: String(categories[0]?.id ?? "") });
                   }}
                 >
                   Отмена
@@ -191,7 +206,7 @@ export function ProductEditor() {
                 <ListItemText
                   primary={product.name}
                   secondary={`${product.price} ₽ • ${
-                    categories.find((c) => c.id === product.page)?.label ?? product.page
+                    categories.find((c) => c.id === product.category_id)?.name ?? "Без категории"
                   }`}
                 />
               </ListItem>

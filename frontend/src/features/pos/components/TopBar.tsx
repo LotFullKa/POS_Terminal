@@ -3,6 +3,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { usePosStore } from "../store";
+import { useAuthStore } from "../authStore";
 import { useState } from "react";
 
 export function TopBar() {
@@ -12,12 +13,13 @@ export function TopBar() {
   const addCategory = usePosStore((s) => s.addCategory);
   const updateCategory = usePosStore((s) => s.updateCategory);
   const deleteCategory = usePosStore((s) => s.deleteCategory);
+  const isAdmin = useAuthStore((s) => s.isAdmin());
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState("");
 
-  const value = categories.findIndex((c) => c.id === page);
+  const value = categories.findIndex((c) => c.slug === page);
 
   const handleAdd = () => {
     setEditingId(null);
@@ -25,29 +27,38 @@ export function TopBar() {
     setDialogOpen(true);
   };
 
-  const handleEdit = (id: string, label: string) => {
+  const handleEdit = (id: number, name: string) => {
     setEditingId(id);
-    setCategoryName(label);
+    setCategoryName(name);
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!categoryName.trim()) return;
 
-    if (editingId) {
-      updateCategory(editingId, categoryName);
-    } else {
-      addCategory(categoryName);
-    }
+    try {
+      if (editingId) {
+        await updateCategory(editingId, categoryName);
+      } else {
+        const slug = categoryName.toLowerCase().replace(/\s+/g, '-');
+        await addCategory(categoryName, slug);
+      }
 
-    setDialogOpen(false);
-    setCategoryName("");
-    setEditingId(null);
+      setDialogOpen(false);
+      setCategoryName("");
+      setEditingId(null);
+    } catch {
+      alert("Ошибка при сохранении категории");
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: number) => {
     if (confirm("Удалить эту категорию? Все продукты в ней также будут удалены.")) {
-      deleteCategory(id);
+      try {
+        await deleteCategory(id);
+      } catch {
+        alert("Ошибка при удалении категории");
+      }
     }
   };
 
@@ -56,7 +67,7 @@ export function TopBar() {
       <Box sx={{ height: 64, display: "flex", alignItems: "center", px: 1.5, gap: 1 }}>
         <Tabs
           value={value}
-          onChange={(_, idx) => setPage(categories[idx].id)}
+          onChange={(_, idx) => setPage(categories[idx].slug)}
           variant="scrollable"
           scrollButtons="auto"
           sx={{ flex: 1 }}
@@ -66,37 +77,43 @@ export function TopBar() {
               key={c.id}
               label={
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  {c.label}
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(c.id, c.label);
-                    }}
-                    sx={{ ml: 0.5, p: 0.3 }}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  {categories.length > 1 && (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(c.id);
-                      }}
-                      sx={{ p: 0.3 }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                  {c.name}
+                  {isAdmin && (
+                    <>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(c.id, c.name);
+                        }}
+                        sx={{ ml: 0.5, p: 0.3 }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      {categories.length > 1 && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(c.id);
+                          }}
+                          sx={{ p: 0.3 }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </>
                   )}
                 </Box>
               }
             />
           ))}
         </Tabs>
-        <IconButton onClick={handleAdd} color="primary">
-          <AddIcon />
-        </IconButton>
+        {isAdmin && (
+          <IconButton onClick={handleAdd} color="primary">
+            <AddIcon />
+          </IconButton>
+        )}
       </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>

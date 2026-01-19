@@ -4,8 +4,7 @@ import threading
 import time
 import webbrowser
 import urllib.request
-
-import uvicorn
+from pathlib import Path
 
 # Для PyInstaller: добавляем путь к упакованным модулям
 if getattr(sys, "frozen", False):
@@ -17,8 +16,8 @@ else:
     bundle_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, bundle_dir)
 
-HOST = os.getenv("HOST", "0.0.0.0")  # 0.0.0.0 для облака, 127.0.0.1 для локального
-PORT = int(os.getenv("PORT", "8080"))  # 8080 для Fly.io, 8000 для локального
+HOST = os.getenv("HOST", "127.0.0.1")  # 127.0.0.1 для локального, 0.0.0.0 для облака
+PORT = int(os.getenv("PORT", "8000"))  # 8000 для локального, 8080 для Fly.io
 
 
 def wait_until_ready(url: str, timeout_sec: float = 10.0) -> bool:
@@ -32,36 +31,55 @@ def wait_until_ready(url: str, timeout_sec: float = 10.0) -> bool:
     return False
 
 
-def run():
-    # Импортируем app напрямую вместо строки
-    from app.main import app as fastapi_app
+def run_django_server():
+    """Запускает Django сервер в отдельном потоке"""
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 
-    config = uvicorn.Config(
-        fastapi_app,  # Передаём объект напрямую
-        host=HOST,
-        port=PORT,
-        log_level="info",
+    import django
+
+    django.setup()
+
+    # Применяем миграции при первом запуске
+    from django.core.management import call_command
+
+    try:
+        call_command("migrate", "--run-syncdb", verbosity=0)
+        print("✅ База данных инициализирована")
+
+        from app.init_db import init_database
+
+        init_database()
+    except Exception as e:
+        print(f"⚠️  Ошибка при инициализации БД: {e}")
+
+    # Запускаем сервер
+    from django.core.management import execute_from_command_line
+
+    execute_from_command_line(
+        ["manage.py", "runserver", f"{HOST}:{PORT}", "--noreload", "--nothreading"]
     )
-    server = uvicorn.Server(config)
 
-    t = threading.Thread(target=server.run, daemon=True)
+
+def run():
+    # Запускаем Django сервер в отдельном потоке
+    t = threading.Thread(target=run_django_server, daemon=True)
     t.start()
 
-    # ждём, пока сервер поднимется
+    # Ждём, пока сервер поднимется
     health_url = f"http://{HOST}:{PORT}/api/health"
     if not wait_until_ready(health_url, timeout_sec=10):
         print("Server did not start in time.")
         return
 
+    # Открываем браузер
     webbrowser.open(f"http://{HOST}:{PORT}/")
 
     try:
-        # держим процесс живым
+        # Держим процесс живым
         while t.is_alive():
             time.sleep(0.5)
     except KeyboardInterrupt:
-        server.should_exit = True
-        t.join(timeout=5)
+        print("\nЗавершение работы...")
 
 
 if __name__ == "__main__":

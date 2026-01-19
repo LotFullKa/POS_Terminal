@@ -44,7 +44,6 @@ export function CartPanel() {
 
   return (
     <Box sx={{ height: "100vh", p: 2, display: "grid", gridTemplateRows: "auto 1fr auto", gap: 2 }}>
-      {/* Текущий заказ */}
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
           <Typography variant="h6" sx={{ flex: 1 }}>
@@ -85,9 +84,9 @@ export function CartPanel() {
               key={l.productId}
               secondaryAction={
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <IconButton onClick={() => decLine(l.productId)}><RemoveIcon /></IconButton>
+                  <IconButton onClick={() => decLine(Number(l.productId))}><RemoveIcon /></IconButton>
                   <Typography sx={{ minWidth: 24, textAlign: "center" }}>{l.qty}</Typography>
-                  <IconButton onClick={() => incLine(l.productId)}><AddIcon /></IconButton>
+                  <IconButton onClick={() => incLine(Number(l.productId))}><AddIcon /></IconButton>
                 </Box>
               }
             >
@@ -147,7 +146,6 @@ export function CartPanel() {
         </Box>
       </Paper>
 
-      {/* Список заказов */}
       <Paper variant="outlined" sx={{ p: 2, overflow: "auto" }}>
         <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 700 }}>
           {statusFilter === "NEW" ? "Новые" : "К выдаче"}
@@ -189,7 +187,6 @@ export function CartPanel() {
         </List>
       </Paper>
 
-      {/* Переключатель статуса и кнопка закрытия дня */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
         <Paper variant="outlined" sx={{ p: 1 }}>
           <ToggleButtonGroup

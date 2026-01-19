@@ -65,7 +65,7 @@ export function ProductEditor() {
   const handleSave = async () => {
     const price = parseFloat(formData.price);
     const category_id = parseInt(formData.category_id);
-    if (!formData.name || isNaN(price) || price <= 0 || isNaN(category_id)) return;
+    if (!formData.name || isNaN(price) || price < 0 || isNaN(category_id)) return;
 
     try {
       if (editingId) {

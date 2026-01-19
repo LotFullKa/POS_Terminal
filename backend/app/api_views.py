@@ -2,8 +2,9 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from .models import User, Category, Product
+from .models import User, Category, Product, Order, OrderLine, DailySummary
 from .auth import create_access_token, login_required, admin_required, get_current_user
+from datetime import datetime
 
 
 @csrf_exempt
@@ -242,5 +243,171 @@ def delete_product(request, product_id):
         return JsonResponse({"success": True})
     except Product.DoesNotExist:
         return JsonResponse({"error": "Продукт не найден"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+@admin_required
+def get_orders_by_date(request):
+    """Получить все заказы за конкретную дату"""
+    try:
+        date = request.GET.get("date")
+        if not date:
+            return JsonResponse({"error": "Требуется параметр date"}, status=400)
+
+        try:
+            daily_summary = DailySummary.objects.get(date=date)
+        except DailySummary.DoesNotExist:
+            return JsonResponse(
+                {
+                    "date": date,
+                    "total_revenue": 0,
+                    "total_orders": 0,
+                    "orders": [],
+                }
+            )
+
+        orders = Order.objects.filter(daily_summary=daily_summary).order_by(
+            "-created_at"
+        )
+
+        orders_data = []
+        for order in orders:
+            lines = OrderLine.objects.filter(order=order)
+            lines_data = [
+                {
+                    "product_id": line.product_id,
+                    "name": line.name,
+                    "price": line.price,
+                    "qty": line.qty,
+                }
+                for line in lines
+            ]
+
+            orders_data.append(
+                {
+                    "id": order.id,
+                    "order_id": order.order_id,
+                    "name": order.name,
+                    "comment": order.comment,
+                    "status": order.status,
+                    "total": order.total,
+                    "is_paid": order.is_paid,
+                    "created_at": order.created_at.isoformat(),
+                    "lines": lines_data,
+                }
+            )
+
+        return JsonResponse(
+            {
+                "date": date,
+                "total_revenue": daily_summary.total_revenue,
+                "total_orders": daily_summary.total_orders,
+                "orders": orders_data,
+            }
+        )
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+@admin_required
+def update_order(request, order_id):
+    """Обновить заказ"""
+    try:
+        order = Order.objects.get(id=order_id)
+        data = json.loads(request.body)
+
+        if "name" in data:
+            order.name = data["name"]
+        if "comment" in data:
+            order.comment = data["comment"]
+        if "status" in data:
+            order.status = data["status"]
+        if "is_paid" in data:
+            order.is_paid = data["is_paid"]
+
+        # Если обновляются позиции заказа
+        if "lines" in data:
+            # Удаляем старые позиции
+            OrderLine.objects.filter(order=order).delete()
+
+            # Создаем новые позиции и пересчитываем total
+            total = 0
+            for line_data in data["lines"]:
+                OrderLine.objects.create(
+                    order=order,
+                    product_id=line_data["product_id"],
+                    name=line_data["name"],
+                    price=line_data["price"],
+                    qty=line_data["qty"],
+                )
+                total += line_data["price"] * line_data["qty"]
+
+            order.total = total
+
+        order.save()
+
+        # Пересчитываем дневную сводку
+        daily_summary = order.daily_summary
+        orders = Order.objects.filter(daily_summary=daily_summary)
+        daily_summary.total_revenue = sum(o.total for o in orders if o.is_paid)
+        daily_summary.total_orders = orders.count()
+        daily_summary.save()
+
+        # Возвращаем обновленный заказ
+        lines = OrderLine.objects.filter(order=order)
+        lines_data = [
+            {
+                "product_id": line.product_id,
+                "name": line.name,
+                "price": line.price,
+                "qty": line.qty,
+            }
+            for line in lines
+        ]
+
+        return JsonResponse(
+            {
+                "id": order.id,
+                "order_id": order.order_id,
+                "name": order.name,
+                "comment": order.comment,
+                "status": order.status,
+                "total": order.total,
+                "is_paid": order.is_paid,
+                "created_at": order.created_at.isoformat(),
+                "lines": lines_data,
+            }
+        )
+    except Order.DoesNotExist:
+        return JsonResponse({"error": "Заказ не найден"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@admin_required
+def delete_order(request, order_id):
+    """Удалить заказ"""
+    try:
+        order = Order.objects.get(id=order_id)
+        daily_summary = order.daily_summary
+
+        # Удаляем заказ (позиции удалятся автоматически через CASCADE)
+        order.delete()
+
+        # Пересчитываем дневную сводку
+        orders = Order.objects.filter(daily_summary=daily_summary)
+        daily_summary.total_revenue = sum(o.total for o in orders if o.is_paid)
+        daily_summary.total_orders = orders.count()
+        daily_summary.save()
+
+        return JsonResponse({"success": True})
+    except Order.DoesNotExist:
+        return JsonResponse({"error": "Заказ не найден"}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)

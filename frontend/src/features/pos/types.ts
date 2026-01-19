@@ -34,3 +34,29 @@ export type Order = {
   lines: Record<string, CartLine>;
   isPaid: boolean;
 };
+
+export type OrderLine = {
+  product_id: string;
+  name: string;
+  price: number;
+  qty: number;
+};
+
+export type OrderDetail = {
+  id: number;
+  order_id: string;
+  name: string;
+  comment: string;
+  status: string;
+  total: number;
+  is_paid: boolean;
+  created_at: string;
+  lines: OrderLine[];
+};
+
+export type DailyOrdersResponse = {
+  date: string;
+  total_revenue: number;
+  total_orders: number;
+  orders: OrderDetail[];
+};

@@ -1,4 +1,4 @@
-import type { Category, Product } from "./types";
+import type { Category, Product, DailyOrdersResponse, OrderDetail } from "./types";
 
 const API_BASE = "/api";
 
@@ -102,6 +102,26 @@ export const api = {
 
   async deleteProduct(id: number | string): Promise<{ success: boolean }> {
     return fetchWithAuth(`${API_BASE}/products/${id}/delete`, {
+      method: "DELETE",
+    });
+  },
+
+  async getOrdersByDate(date: string): Promise<DailyOrdersResponse> {
+    return fetchWithAuth(`${API_BASE}/orders?date=${date}`);
+  },
+
+  async updateOrder(
+    id: number,
+    data: Partial<OrderDetail>
+  ): Promise<OrderDetail> {
+    return fetchWithAuth(`${API_BASE}/orders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteOrder(id: number): Promise<{ success: boolean }> {
+    return fetchWithAuth(`${API_BASE}/orders/${id}/delete`, {
       method: "DELETE",
     });
   },

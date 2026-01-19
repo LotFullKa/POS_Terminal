@@ -29,5 +29,12 @@ urlpatterns = [
         api_views.delete_product,
         name="delete_product",
     ),
+    path("api/orders", api_views.get_orders_by_date, name="get_orders_by_date"),
+    path("api/orders/<int:order_id>", api_views.update_order, name="update_order"),
+    path(
+        "api/orders/<int:order_id>/delete",
+        api_views.delete_order,
+        name="delete_order",
+    ),
     re_path(r"^(?P<path>.*)$", serve_frontend, name="frontend"),
 ]

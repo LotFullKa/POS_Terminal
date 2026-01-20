@@ -41,6 +41,10 @@ def login(request):
             }
         )
     except Exception as e:
+        import traceback
+
+        print(f"❌ Ошибка при логине: {e}")
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
 

@@ -17,7 +17,7 @@ else:
     sys.path.insert(0, bundle_dir)
 
 HOST = os.getenv("HOST", "127.0.0.1")  # 127.0.0.1 для локального, 0.0.0.0 для облака
-PORT = int(os.getenv("PORT", "8000"))  # 8000 для локального, 8080 для Fly.io
+PORT = int(os.getenv("PORT", "8000"))  # 8000 для локального
 
 
 def wait_until_ready(url: str, timeout_sec: float = 10.0) -> bool:
@@ -41,16 +41,35 @@ def run_django_server():
 
     # Применяем миграции при первом запуске
     from django.core.management import call_command
+    from django.db import connection
 
     try:
-        call_command("migrate", "--run-syncdb", verbosity=0)
-        print("✅ База данных инициализирована")
+        # Проверяем, существует ли таблица users
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+            )
+            table_exists = cursor.fetchone() is not None
+
+        if not table_exists:
+            # Если таблиц нет, создаём их через migrate
+            print("🔧 Создание таблиц базы данных...")
+            call_command("migrate", "--run-syncdb", verbosity=1)
+            print("✅ База данных инициализирована")
+        else:
+            # Если таблицы есть, просто применяем миграции
+            print("🔧 Применение миграций...")
+            call_command("migrate", verbosity=1)
+            print("✅ Миграции применены")
 
         from app.init_db import init_database
 
         init_database()
     except Exception as e:
         print(f"⚠️  Ошибка при инициализации БД: {e}")
+        import traceback
+
+        traceback.print_exc()
 
     # Запускаем сервер
     from django.core.management import execute_from_command_line

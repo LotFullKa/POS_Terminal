@@ -1,5 +1,5 @@
 from django.urls import path, re_path
-from . import views, api_views
+from . import views, api_views, analytics_views
 from .main import serve_frontend
 
 urlpatterns = [
@@ -36,5 +36,6 @@ urlpatterns = [
         api_views.delete_order,
         name="delete_order",
     ),
+    path("api/analytics", analytics_views.get_analytics, name="get_analytics"),
     re_path(r"^(?P<path>.*)$", serve_frontend, name="frontend"),
 ]

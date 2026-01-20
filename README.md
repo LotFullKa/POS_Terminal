@@ -1,152 +1,107 @@
-# POS Terminal
-for MIPT 6ka Coffee
+# CashMachine
 
-Система кассового терминала для кофейни с поддержкой:
-- Управления заказами и продуктами
-- Редактируемого меню с категориями
-- Отслеживания оплаты
-- Сохранения данных в локальную БД
+POS-терминал для кофейни МФТИ 6ка
 
-## 🚀 Быстрый старт (для разработки)
+## Что это
 
-### Требования
-- Python 3.10+
-- Node.js 18+
-- npm или yarn
+Касса с интерфейсом в браузере. Работает локально, данные хранятся в SQLite.
 
-### Установка
+Основное:
+- Заказы с оплатой и комментариями
+- Редактируемое меню с категориями
+- Закрытие дня с сохранением в БД
+- Аналитика продаж
 
-1. Клонируйте репозиторий:
+## Запуск
+
+Скачайте готовый билд из релизов и запустите:
+
+**macOS/Linux:**
 ```bash
-git clone <repository-url>
-cd CashMachine
+./CashMachine
 ```
 
-2. Установите Python зависимости:
+**Windows:**
+```
+CashMachine.exe
+```
+
+Откроется браузер на `http://localhost:8000`
+
+## Сборка из исходников
+
+Нужны Python 3.10+ и Node.js 18+
+
 ```bash
+# Установить зависимости
 pip install -r requirements-build.txt
+cd frontend && npm install && cd ..
+
+# Собрать
+./build.sh          # macOS/Linux
+build.bat           # Windows
 ```
 
-3. Установите Node.js зависимости:
+Результат в `dist/CashMachine`
+
+## Docker (для VPS)
+
+### Быстрый старт
+
 ```bash
-cd frontend
-npm install
-cd ..
+docker-compose -f docker-compose.simple.yml up -d
 ```
 
-### Запуск в режиме разработки
+Приложение будет доступно на порту 80.
 
-1. Соберите фронтенд:
+### С nginx и SSL
+
+1. Положите SSL сертификаты в `ssl/cert.pem` и `ssl/key.pem`
+2. Раскомментируйте SSL настройки в `nginx.conf`
+3. Запустите:
+
+```bash
+docker-compose up -d
+```
+
+### Управление
+
+```bash
+# Логи
+docker-compose logs -f
+
+# Остановка
+docker-compose down
+
+# Пересборка
+docker-compose up -d --build
+```
+
+## Разработка
+
+Быстрый запуск для тестов:
+
 ```bash
 cd frontend
 npm run build
 cd ..
-```
-
-2. Скопируйте dist в backend:
-```bash
 cp -r frontend/dist backend/app/dist
-```
-
-3. Запустите приложение:
-```bash
 python backend/launcher.py
 ```
 
-Приложение откроется в браузере по адресу http://localhost:8000
+## База данных
 
-## 📦 Сборка релиза
-
-### Подготовка
-
-1. Убедитесь, что установлены все зависимости:
-```bash
-pip install -r requirements-build.txt
-cd frontend && npm install && cd ..
-```
-
-### Сборка
-
-#### Linux/macOS:
-```bash
-chmod +x build.sh
-./build.sh
-```
-
-#### Windows:
-```bash
-build.bat
-```
-
-### Результат
-
-После успешной сборки исполняемый файл будет находиться в:
-- **Linux/macOS**: `dist/CashMachine`
-- **Windows**: `dist/CashMachine.exe`
-
-Просто запустите файл - приложение автоматически откроется в браузере.
-
-## 📊 Функциональность
-
-### Управление заказами
-- Создание и редактирование заказов
-- Добавление позиций из меню
-- Отслеживание статуса оплаты
-- Комментарии к заказам
-
-### Управление меню
-- Создание/редактирование/удаление продуктов
-- Настройка цен
-- Создание категорий
-- Переключение между категориями
-
-### Закрытие дня
-- Сохранение всех заказов в локальную БД
-- Подсчёт выручки и статистики
-
-## 🗄️ База данных
-
-Локальная SQLite база данных создаётся автоматически в:
-- **Windows**: `%LOCALAPPDATA%\MyPOS\pos.sqlite`
+SQLite создаётся автоматически:
 - **macOS**: `~/Library/Application Support/MyPOS/pos.sqlite`
 - **Linux**: `~/.local/share/MyPOS/pos.sqlite`
+- **Windows**: `%LOCALAPPDATA%\MyPOS\pos.sqlite`
 
-## 🛠️ Технологии
+## Стек
 
-### Frontend
-- React 18
-- TypeScript
-- Material-UI (MUI)
-- Zustand (state management)
-- Vite
+Frontend: React + TypeScript + MUI + Zustand
+Backend: Django + SQLite
+Сборка: PyInstaller + Vite
 
-### Backend
-- Django
-- SQLite
-
-### Сборка
-- PyInstaller
-- Vite build
-
-## 📝 Лицензия
+## Лицензия
 
 MIT
-
-## 🤝 Разработка
-
-Для внесения изменений:
-
-1. Создайте ветку: `git checkout -b feature/my-feature`
-2. Внесите изменения
-3. Соберите и протестируйте: `./build.sh`
-4. Создайте Pull Request
-
-## 🐛 Troubleshooting
-
-### Приложение не запускается
-- Проверьте, что порт 8000 свободен
-- Убедитесь, что все зависимости установлены
-
-### Ошибка при сборке
-- Убедитесь, что установлен PyInstaller: `pip install pyinstaller`
-- Проверьте версию Python (требуется 3.10+)

@@ -1,4 +1,4 @@
-import type { Category, Product, DailyOrdersResponse, OrderDetail } from "./types";
+import type { Category, Product, DailyOrdersResponse, OrderDetail, AnalyticsResponse } from "./types";
 
 const API_BASE = "/api";
 
@@ -136,5 +136,9 @@ export const api = {
     return fetchWithAuth(`${API_BASE}/orders/${id}/delete`, {
       method: "DELETE",
     });
+  },
+
+  async getAnalytics(days: number = 30): Promise<AnalyticsResponse> {
+    return fetchWithAuth(`${API_BASE}/analytics?days=${days}`);
   },
 };

@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Установка Node.js для сборки фронтенда
+# Установка системных зависимостей
 RUN apt-get update && \
     apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
@@ -10,11 +10,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Копирование requirements и установка Python зависимостей
+# Копирование и установка Python зависимостей
 COPY requirements-build.txt .
 RUN pip install --no-cache-dir -r requirements-build.txt
 
-# Копирование и сборка фронтенда
+# Сборка фронтенда
 COPY frontend/package*.json frontend/
 WORKDIR /app/frontend
 RUN npm ci
@@ -25,14 +25,17 @@ RUN npm run build
 WORKDIR /app
 COPY backend/ backend/
 
-# Копирование собранного фронтенда в backend
+# Копирование собранного фронтенда
 RUN cp -r frontend/dist backend/app/dist
 
-# Создание директории для БД
+# Создание директории для данных
 RUN mkdir -p /data
 
-# Порт приложения
+# Переменные окружения
+ENV DOCKER_ENV=1
+ENV HOST=0.0.0.0
+ENV PORT=8080
+
 EXPOSE 8080
 
-# Запуск приложения
 CMD ["python", "backend/launcher.py"]

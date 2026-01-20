@@ -3,6 +3,7 @@ Django settings for CashMachine project.
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project
@@ -50,10 +51,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "app.wsgi.application"
 
 # Database
-# Локально используем домашнюю директорию
-APP_DIR = Path.home() / "AppData" / "Local" / "MyPOS"
-APP_DIR.mkdir(parents=True, exist_ok=True)
-DB_PATH = APP_DIR / "pos.sqlite"
+# Используем переменную окружения для пути к БД или дефолтную директорию
+if os.getenv("DOCKER_ENV"):
+    # В Docker используем /data
+    DB_PATH = Path("/data/pos.sqlite")
+else:
+    # Локально используем домашнюю директорию
+    if os.name == "nt":  # Windows
+        APP_DIR = Path.home() / "AppData" / "Local" / "MyPOS"
+    elif sys.platform == "darwin":  # macOS
+        APP_DIR = Path.home() / "Library" / "Application Support" / "MyPOS"
+    else:  # Linux
+        APP_DIR = Path.home() / ".local" / "share" / "MyPOS"
+
+    APP_DIR.mkdir(parents=True, exist_ok=True)
+    DB_PATH = APP_DIR / "pos.sqlite"
 
 # Создаём родительскую директорию если нужно
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)

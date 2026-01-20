@@ -112,6 +112,17 @@ export function LoginScreen({ onLogin }: Props) {
           <Typography variant="caption" sx={{ display: "block" }}>
             Кассир: user / user
           </Typography>
+          <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+            Автор приложения:{" "}
+            <a
+              href="https://t.me/LotFullKa"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "inherit", textDecoration: "underline" }}
+            >
+              @LotFullKa
+            </a>
+          </Typography>
         </Box>
       </Paper>
     </Box>

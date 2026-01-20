@@ -18,18 +18,22 @@ import {
   TableRow,
   Chip,
   Alert,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { api } from "../../api";
 import type { OrderDetail } from "../../types";
+import { AnalyticsTab } from "./AnalyticsTab";
 
 type OrdersPageProps = {
   onBack: () => void;
 };
 
 export function OrdersPage({ onBack }: OrdersPageProps) {
+  const [activeTab, setActiveTab] = useState(0);
   const [date, setDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -112,97 +116,110 @@ export function OrdersPage({ onBack }: OrdersPageProps) {
         <IconButton onClick={onBack}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4">Заказы за дату</Typography>
+        <Typography variant="h4">Заказы и аналитика</Typography>
       </Box>
 
-      <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center" }}>
-        <TextField
-          type="date"
-          label="Дата"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-        <Button variant="contained" onClick={() => loadOrders(date)}>
-          Загрузить
-        </Button>
+      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+          <Tab label="Заказы за дату" />
+          <Tab label="Аналитика" />
+        </Tabs>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+      {activeTab === 0 && (
+        <>
+          <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center" }}>
+            <TextField
+              type="date"
+              label="Дата"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <Button variant="contained" onClick={() => loadOrders(date)}>
+              Загрузить
+            </Button>
+          </Box>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6">Сводка за {date}</Typography>
+            <Typography>Всего заказов: {totalOrders}</Typography>
+            <Typography>Общая выручка: {totalRevenue.toFixed(2)} ₽</Typography>
+          </Paper>
+
+          {loading ? (
+            <Typography>Загрузка...</Typography>
+          ) : orders.length === 0 ? (
+            <Typography>Нет заказов за выбранную дату</Typography>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Имя</TableCell>
+                    <TableCell>Дата/Время</TableCell>
+                    <TableCell>Статус</TableCell>
+                    <TableCell>Сумма</TableCell>
+                    <TableCell>Оплачен</TableCell>
+                    <TableCell>Комментарий</TableCell>
+                    <TableCell>Действия</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>{order.order_id}</TableCell>
+                      <TableCell>{order.name}</TableCell>
+                      <TableCell>{formatDate(order.created_at)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={order.status}
+                          color={order.status === "NEW" ? "primary" : "default"}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{order.total.toFixed(2)} ₽</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={order.is_paid ? "Да" : "Нет"}
+                          color={order.is_paid ? "success" : "default"}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{order.comment || "-"}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEdit(order)}
+                          color="primary"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(order.id)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </>
       )}
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6">Сводка за {date}</Typography>
-        <Typography>Всего заказов: {totalOrders}</Typography>
-        <Typography>Общая выручка: {totalRevenue.toFixed(2)} ₽</Typography>
-      </Paper>
-
-      {loading ? (
-        <Typography>Загрузка...</Typography>
-      ) : orders.length === 0 ? (
-        <Typography>Нет заказов за выбранную дату</Typography>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Имя</TableCell>
-                <TableCell>Дата/Время</TableCell>
-                <TableCell>Статус</TableCell>
-                <TableCell>Сумма</TableCell>
-                <TableCell>Оплачен</TableCell>
-                <TableCell>Комментарий</TableCell>
-                <TableCell>Действия</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.order_id}</TableCell>
-                  <TableCell>{order.name}</TableCell>
-                  <TableCell>{formatDate(order.created_at)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={order.status}
-                      color={order.status === "NEW" ? "primary" : "default"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{order.total.toFixed(2)} ₽</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={order.is_paid ? "Да" : "Нет"}
-                      color={order.is_paid ? "success" : "default"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{order.comment || "-"}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEdit(order)}
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(order.id)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      {activeTab === 1 && <AnalyticsTab />}
 
       {/* Диалог редактирования */}
       <Dialog

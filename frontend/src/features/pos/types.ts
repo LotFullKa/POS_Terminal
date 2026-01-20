@@ -65,3 +65,49 @@ export type DailyOrdersResponse = {
   total_orders: number;
   orders: OrderDetail[];
 };
+
+export type RevenueByDay = {
+  date: string;
+  revenue: number;
+  orders: number;
+};
+
+export type TopProduct = {
+  product_id: string;
+  name: string;
+  quantity: number;
+  revenue: number;
+};
+
+export type HourlyStat = {
+  hour: number;
+  orders: number;
+  revenue: number;
+};
+
+export type WeekdayStat = {
+  weekday: string;
+  orders: number;
+  revenue: number;
+  avg_check: number;
+};
+
+export type AnalyticsResponse = {
+  period: {
+    start_date: string;
+    end_date: string;
+    days: number;
+  };
+  summary: {
+    total_revenue: number;
+    total_orders: number;
+    avg_order_value: number;
+    paid_orders: number;
+    unpaid_orders: number;
+    paid_revenue: number;
+  };
+  revenue_by_day: RevenueByDay[];
+  top_products: TopProduct[];
+  hourly_stats: HourlyStat[];
+  weekday_stats: WeekdayStat[];
+};

@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { ProductGrid } from "./ProductGrid";
 import { ProductEditor } from "./ProductEditor";
 
@@ -8,13 +8,7 @@ export function CatalogPanel() {
       <Box>
         <ProductEditor />
       </Box>
-
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-          <Typography variant="h6" sx={{ flex: 1 }}>Меню</Typography>
-        </Box>
-        <ProductGrid />
-      </Paper>
+      <ProductGrid />
     </Box>
   );
 }

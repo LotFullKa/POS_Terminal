@@ -1,4 +1,4 @@
-import { Box, Tabs, Tab, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
+import { Box, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -18,8 +18,6 @@ export function TopBar() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState("");
-
-  const value = categories.findIndex((c) => c.slug === page);
 
   const handleAdd = () => {
     setEditingId(null);
@@ -64,29 +62,33 @@ export function TopBar() {
 
   return (
     <>
-      <Box sx={{ height: 64, display: "flex", alignItems: "center", px: 1.5, gap: 1 }}>
-        <Tabs
-          value={value}
-          onChange={(_, idx) => setPage(categories[idx].slug)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ flex: 1 }}
-        >
-          {categories.map((c) => (
-            <Tab
-              key={c.id}
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  {c.name}
+      <Box sx={{ height: 64, display: "flex", alignItems: "center", px: 2, gap: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          Меню
+        </Typography>
+
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Категория</InputLabel>
+          <Select
+            value={page}
+            label="Категория"
+            onChange={(e) => setPage(e.target.value)}
+            size="small"
+          >
+            <MenuItem value="all">Все</MenuItem>
+            {categories.map((c) => (
+              <MenuItem key={c.id} value={c.slug}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <span>{c.name}</span>
                   {isAdmin && (
-                    <>
+                    <Box sx={{ display: "flex", gap: 0.5, ml: 2 }}>
                       <IconButton
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(c.id, c.name);
                         }}
-                        sx={{ ml: 0.5, p: 0.3 }}
+                        sx={{ p: 0.3 }}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -102,15 +104,16 @@ export function TopBar() {
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       )}
-                    </>
+                    </Box>
                   )}
                 </Box>
-              }
-            />
-          ))}
-        </Tabs>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         {isAdmin && (
-          <IconButton onClick={handleAdd} color="primary">
+          <IconButton onClick={handleAdd} color="primary" size="small">
             <AddIcon />
           </IconButton>
         )}

@@ -22,6 +22,7 @@ type State = {
   setOrderName: (id: string, name: string) => void;
   setOrderComment: (id: string, comment: string) => void;
   toggleOrderPaid: (id: string) => void;
+  moveToQueueAndCreateNew: () => string;
 
   addToCurrent: (p: Product) => void;
   incLine: (productId: number) => void;
@@ -170,6 +171,11 @@ export const usePosStore = create<State>()((set, get) => ({
         [id]: { ...s.orders[id], isPaid: !s.orders[id].isPaid },
       },
     })),
+
+  moveToQueueAndCreateNew: () => {
+    // Заказ уже в статусе NEW (очередь), просто создаем новый заказ
+    return get().newOrder();
+  },
 
   cancelOrder: (id) =>
     set((s) => {

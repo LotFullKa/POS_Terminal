@@ -38,7 +38,7 @@ export function OrderCard({ order, open, onClose }: Props) {
             📅 Создан: {new Date(order.createdAt).toLocaleString("ru-RU")}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>
-            📊 Статус: {order.status === "NEW" ? "Новый" : "К выдаче"}
+            📊 Статус: {order.status === "NEW" ? "Очередь" : "Выдано"}
           </Typography>
           <Typography variant="body1" color="text.secondary">
             💳 Оплата: {order.isPaid ? "Оплачен" : "Не оплачен"}

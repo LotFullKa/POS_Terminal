@@ -4,6 +4,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import { TopBar } from "./components/TopBar";
 import { CartPanel } from "./components/CartPanel";
+import { CurrentOrderPanel } from "./components/CurrentOrderPanel";
 import { CatalogPanel } from "./components/CatalogPanel";
 import { OrdersPage } from "./components/OrdersPage";
 import { usePosStore } from "./store";
@@ -33,15 +34,18 @@ export function PosScreen() {
       sx={{
         height: "100vh",
         display: "grid",
-        gridTemplateColumns: "360px 1fr",
+        gridTemplateColumns: "360px 1fr 400px",
         bgcolor: "background.default",
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ borderRight: "1px solid", borderColor: "divider" }}>
+      {/* Левая колонка: Список заказов */}
+      <Box sx={{ borderRight: "1px solid", borderColor: "divider", overflow: "hidden" }}>
         <CartPanel />
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateRows: "64px 1fr" }}>
+      {/* Центральная колонка: Каталог */}
+      <Box sx={{ display: "grid", gridTemplateRows: "64px 1fr", overflow: "hidden" }}>
         <Box sx={{ borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <TopBar />
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2 }}>
@@ -70,6 +74,11 @@ export function PosScreen() {
         <Box sx={{ overflow: "auto" }}>
           <CatalogPanel />
         </Box>
+      </Box>
+
+      {/* Правая колонка: Текущий заказ */}
+      <Box sx={{ borderLeft: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+        <CurrentOrderPanel />
       </Box>
     </Box>
   );

@@ -1,4 +1,4 @@
-import { Button, Typography } from "@mui/material";
+import { Box, Button, Paper, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { usePosStore } from "../store";
 
@@ -9,7 +9,9 @@ export function ProductGrid() {
   const addToCurrent = usePosStore((s) => s.addToCurrent);
 
   const currentCategory = categories.find((c) => c.slug === page);
-  const filteredProducts = currentCategory
+  const filteredProducts = page === "all"
+    ? products.filter((p) => p.is_active)
+    : currentCategory
     ? products.filter((p) => p.category_id === currentCategory.id && p.is_active)
     : [];
 
@@ -29,6 +31,51 @@ export function ProductGrid() {
     );
   }
 
+  // Если выбран раздел "Все", группируем по категориям
+  if (page === "all") {
+    const productsByCategory = categories.map((category) => ({
+      category,
+      products: filteredProducts.filter((p) => p.category_id === category.id),
+    })).filter((group) => group.products.length > 0);
+
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+        {productsByCategory.map(({ category, products: categoryProducts }) => (
+          <Paper key={category.id} variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
+              {category.name}
+            </Typography>
+            <Grid container spacing={1.2}>
+              {categoryProducts.map((product) => (
+                <Grid key={product.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    sx={{
+                      minHeight: 72,
+                      height: "auto",
+                      py: 1.5,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      whiteSpace: "normal",
+                      wordWrap: "break-word"
+                    }}
+                    onClick={() => addToCurrent(product)}
+                  >
+                    <Typography sx={{ fontSize: "0.9rem", fontWeight: 700 }}>
+                      {product.name}
+                    </Typography>
+                  </Button>
+                </Grid>
+              ))}
+            </Grid>
+          </Paper>
+        ))}
+      </Box>
+    );
+  }
+
+  // Обычное отображение для конкретной категории
   return (
     <Grid container spacing={1.2} sx={{ mt: 1 }}>
       {filteredProducts.map((product) => (
@@ -36,7 +83,15 @@ export function ProductGrid() {
           <Button
             fullWidth
             variant="contained"
-            sx={{ height: 72, textTransform: "none", fontWeight: 700 }}
+            sx={{
+              minHeight: 72,
+              height: "auto",
+              py: 1.5,
+              textTransform: "none",
+              fontWeight: 700,
+              whiteSpace: "normal",
+              wordWrap: "break-word"
+            }}
             onClick={() => addToCurrent(product)}
           >
             <Typography sx={{ fontSize: "0.9rem", fontWeight: 700 }}>

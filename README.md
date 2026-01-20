@@ -44,38 +44,6 @@ build.bat           # Windows
 
 Результат в `dist/CashMachine`
 
-## Docker (для VPS)
-
-### Быстрый старт
-
-```bash
-docker-compose -f docker-compose.simple.yml up -d
-```
-
-Приложение будет доступно на порту 80.
-
-### С nginx и SSL
-
-1. Положите SSL сертификаты в `ssl/cert.pem` и `ssl/key.pem`
-2. Раскомментируйте SSL настройки в `nginx.conf`
-3. Запустите:
-
-```bash
-docker-compose up -d
-```
-
-### Управление
-
-```bash
-# Логи
-docker-compose logs -f
-
-# Остановка
-docker-compose down
-
-# Пересборка
-docker-compose up -d --build
-```
 
 ## Разработка
 

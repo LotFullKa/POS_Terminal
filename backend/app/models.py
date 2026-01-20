@@ -32,6 +32,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.CharField(max_length=100, unique=True, db_index=True)
     order = models.IntegerField(default=0)
+    is_addon = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

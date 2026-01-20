@@ -106,14 +106,11 @@ export function LoginScreen({ onLogin }: Props) {
         </form>
 
         <Box sx={{ mt: 3, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
-          <Typography variant="caption" sx={{ display: "block", mb: 0.5 }}>
-            Тестовые учетные записи:
+          <Typography variant="caption" sx={{ display: "block" }}>
+            Редактор: admin / admin
           </Typography>
           <Typography variant="caption" sx={{ display: "block" }}>
-            Администратор: admin / admin
-          </Typography>
-          <Typography variant="caption" sx={{ display: "block" }}>
-            Пользователь: user / user
+            Кассир: user / user
           </Typography>
         </Box>
       </Paper>

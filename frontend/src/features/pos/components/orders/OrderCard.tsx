@@ -11,7 +11,7 @@ import {
   Divider,
   Box,
 } from "@mui/material";
-import type { Order } from "../types";
+import type { Order } from "../../types";
 
 const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
 

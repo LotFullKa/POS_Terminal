@@ -4,9 +4,9 @@ import {
   Button
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
-import { usePosStore } from "../store";
+import { usePosStore } from "../../store";
 import { OrderCard } from "./OrderCard";
-import { EndDayButton } from "./EndDayButton";
+import { EndDayButton } from "../shared/EndDayButton";
 import { useState, useEffect, useRef } from "react";
 
 const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
@@ -73,7 +73,7 @@ export function CartPanel() {
 
         <List dense>
           {filteredOrders.map((o) => {
-            const orderLines = Object.values(o.lines);
+            const orderLines = o.lineOrder.map(id => o.lines[id]).filter(Boolean);
             const orderTotal = orderLines.reduce((sum, l) => sum + l.price * l.qty, 0);
 
             return (
@@ -141,20 +141,21 @@ export function CartPanel() {
                     </Typography>
                     {orderLines.map((l) => (
                       <Box
-                        key={l.productId}
+                        key={l.lineId}
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
                           py: 0.5,
                           px: 1,
+                          pl: l.isAddon ? 3 : 1,
                           "&:hover": { bgcolor: "action.hover" },
                           borderRadius: 0.5,
                         }}
                       >
-                        <Typography variant="caption">
-                          {l.name} × {l.qty}
+                        <Typography variant="caption" color={l.isAddon ? "text.secondary" : "text.primary"}>
+                          {l.isAddon ? `+ ${l.name}` : l.name} × {l.qty}
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600 }} color={l.isAddon ? "text.secondary" : "text.primary"}>
                           {money(l.price * l.qty)} ₽
                         </Typography>
                       </Box>

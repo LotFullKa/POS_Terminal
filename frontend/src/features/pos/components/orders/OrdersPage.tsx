@@ -22,8 +22,8 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { api } from "../api";
-import type { OrderDetail } from "../types";
+import { api } from "../../api";
+import type { OrderDetail } from "../../types";
 
 type OrdersPageProps = {
   onBack: () => void;

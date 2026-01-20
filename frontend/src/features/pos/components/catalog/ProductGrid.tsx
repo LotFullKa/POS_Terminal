@@ -1,6 +1,6 @@
 import { Box, Button, Paper, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { usePosStore } from "../store";
+import { usePosStore } from "../../store";
 
 export function ProductGrid() {
   const products = usePosStore((s) => s.products);

@@ -58,7 +58,13 @@ def get_categories(request):
     return JsonResponse(
         {
             "categories": [
-                {"id": cat.id, "name": cat.name, "slug": cat.slug, "order": cat.order}
+                {
+                    "id": cat.id,
+                    "name": cat.name,
+                    "slug": cat.slug,
+                    "order": cat.order,
+                    "is_addon": cat.is_addon,
+                }
                 for cat in categories
             ]
         }
@@ -78,7 +84,10 @@ def create_category(request):
             return JsonResponse({"error": "Требуется название и slug"}, status=400)
 
         category = Category.objects.create(
-            name=name, slug=slug, order=data.get("order", 0)
+            name=name,
+            slug=slug,
+            order=data.get("order", 0),
+            is_addon=data.get("is_addon", False),
         )
 
         return JsonResponse(
@@ -87,6 +96,7 @@ def create_category(request):
                 "name": category.name,
                 "slug": category.slug,
                 "order": category.order,
+                "is_addon": category.is_addon,
             }
         )
     except Exception as e:
@@ -107,6 +117,8 @@ def update_category(request, category_id):
             category.slug = data["slug"]
         if "order" in data:
             category.order = data["order"]
+        if "is_addon" in data:
+            category.is_addon = data["is_addon"]
 
         category.save()
 
@@ -116,6 +128,7 @@ def update_category(request, category_id):
                 "name": category.name,
                 "slug": category.slug,
                 "order": category.order,
+                "is_addon": category.is_addon,
             }
         )
     except Category.DoesNotExist:

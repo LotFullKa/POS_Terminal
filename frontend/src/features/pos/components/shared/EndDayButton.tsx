@@ -11,7 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { usePosStore } from "../store";
+import { usePosStore } from "../../store";
 
 const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
 

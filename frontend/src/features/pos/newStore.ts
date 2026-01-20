@@ -25,10 +25,11 @@ type State = {
   moveToQueueAndCreateNew: () => string;
 
   addToCurrent: (p: Product) => void;
-  incLine: (productId: number) => void;
-  decLine: (productId: number) => void;
+  incLine: (lineId: string) => void;
+  decLine: (lineId: string) => void;
   clearCurrent: () => void;
   cancelOrder: (id: string) => void;
+  reorderLines: (orderId: string, productIds: string[]) => void;
 
   products: Product[];
   categories: Category[];
@@ -40,9 +41,10 @@ type State = {
   updateProduct: (id: number | string, product: Partial<Omit<Product, "id">>) => Promise<void>;
   deleteProduct: (id: number | string) => Promise<void>;
 
-  addCategory: (name: string, slug: string) => Promise<void>;
-  updateCategory: (id: number, name: string) => Promise<void>;
+  addCategory: (name: string, slug: string, is_addon?: boolean) => Promise<void>;
+  updateCategory: (id: number, name: string, is_addon?: boolean) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
+  reorderCategories: (categoryIds: number[]) => Promise<void>;
 };
 
 export const usePosStore = create<State>()((set, get) => ({
@@ -71,6 +73,7 @@ export const usePosStore = create<State>()((set, get) => ({
       createdAt: Date.now(),
       lines: {},
       isPaid: false,
+      lineOrder: [],
     };
     set((s) => ({ orders: { ...s.orders, [id]: order }, currentOrderId: id }));
     return id;
@@ -106,54 +109,72 @@ export const usePosStore = create<State>()((set, get) => ({
           createdAt: Date.now(),
           lines: {},
           isPaid: false,
+          lineOrder: [],
         } as Order);
 
-      const productKey = String(p.id);
-      const line = order.lines[productKey];
+      // Проверяем, является ли категория товара добавкой
+      const category = s.categories.find(c => c.id === p.category_id);
+      const isAddon = category?.is_addon || false;
+
+      // Всегда создаем новую строку с уникальным lineId
+      const lineId = uid();
       const lines = {
         ...order.lines,
-        [productKey]: line
-          ? { ...line, qty: line.qty + 1 }
-          : { productId: productKey, name: p.name, price: p.price, qty: 1 },
+        [lineId]: {
+          lineId,
+          productId: String(p.id),
+          name: p.name,
+          price: p.price,
+          qty: 1,
+          categoryId: p.category_id,
+          isAddon
+        },
       };
+
+      // Добавляем новую строку в конец
+      const lineOrder = [...order.lineOrder, lineId];
 
       return {
         currentOrderId: orderId,
-        orders: { ...s.orders, [orderId]: { ...order, lines } },
+        orders: { ...s.orders, [orderId]: { ...order, lines, lineOrder } },
       };
     }),
 
-  incLine: (productId) =>
+  incLine: (lineId) =>
     set((s) => {
       if (!s.currentOrderId) return s;
       const o = s.orders[s.currentOrderId];
-      const productKey = String(productId);
-      const line = o?.lines[productKey];
+      const line = o?.lines[lineId];
       if (!o || !line) return s;
       return {
         orders: {
           ...s.orders,
           [o.id]: {
             ...o,
-            lines: { ...o.lines, [productKey]: { ...line, qty: line.qty + 1 } },
+            lines: { ...o.lines, [lineId]: { ...line, qty: line.qty + 1 } },
           },
         },
       };
     }),
 
-  decLine: (productId) =>
+  decLine: (lineId) =>
     set((s) => {
       if (!s.currentOrderId) return s;
       const o = s.orders[s.currentOrderId];
-      const productKey = String(productId);
-      const line = o?.lines[productKey];
+      const line = o?.lines[lineId];
       if (!o || !line) return s;
 
       const lines = { ...o.lines };
-      if (line.qty <= 1) delete lines[productKey];
-      else lines[productKey] = { ...line, qty: line.qty - 1 };
+      let lineOrder = o.lineOrder;
 
-      return { orders: { ...s.orders, [o.id]: { ...o, lines } } };
+      if (line.qty <= 1) {
+        delete lines[lineId];
+        lineOrder = lineOrder.filter(id => id !== lineId);
+      } else {
+        lines[lineId] = { ...line, qty: line.qty - 1 };
+      }
+
+      return { orders: { ...s.orders, [o.id]: { ...o, lines, lineOrder } } };
     }),
 
   clearCurrent: () =>
@@ -184,6 +205,19 @@ export const usePosStore = create<State>()((set, get) => ({
       return {
         orders: remainingOrders,
         currentOrderId: s.currentOrderId === id ? null : s.currentOrderId,
+      };
+    }),
+
+  reorderLines: (orderId, lineIds) =>
+    set((s) => {
+      const order = s.orders[orderId];
+      if (!order) return s;
+
+      return {
+        orders: {
+          ...s.orders,
+          [orderId]: { ...order, lineOrder: lineIds }
+        }
       };
     }),
 
@@ -249,9 +283,9 @@ export const usePosStore = create<State>()((set, get) => ({
     }
   },
 
-  addCategory: async (name, slug) => {
+  addCategory: async (name, slug, is_addon = false) => {
     try {
-      const newCategory = await api.createCategory(name, slug);
+      const newCategory = await api.createCategory(name, slug, is_addon);
       set((s) => ({
         categories: [...s.categories, newCategory],
         page: newCategory.slug,
@@ -262,9 +296,13 @@ export const usePosStore = create<State>()((set, get) => ({
     }
   },
 
-  updateCategory: async (id, name) => {
+  updateCategory: async (id, name, is_addon) => {
     try {
-      const updated = await api.updateCategory(id, { name });
+      const updates: Partial<Category> = { name };
+      if (is_addon !== undefined) {
+        updates.is_addon = is_addon;
+      }
+      const updated = await api.updateCategory(id, updates);
       set((s) => ({
         categories: s.categories.map((c) => (c.id === id ? updated : c)),
       }));
@@ -290,6 +328,30 @@ export const usePosStore = create<State>()((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to delete category:", error);
+      throw error;
+    }
+  },
+
+  reorderCategories: async (categoryIds) => {
+    try {
+      const updates = categoryIds.map((id, index) => ({
+        id,
+        order: index,
+      }));
+
+      await api.reorderCategories(updates);
+
+      set((s) => {
+        const categoriesMap = new Map(s.categories.map(c => [c.id, c]));
+        const reordered = categoryIds
+          .map(id => categoriesMap.get(id))
+          .filter((c): c is Category => c !== undefined)
+          .map((c, index) => ({ ...c, order: index }));
+
+        return { categories: reordered };
+      });
+    } catch (error) {
+      console.error("Failed to reorder categories:", error);
       throw error;
     }
   },

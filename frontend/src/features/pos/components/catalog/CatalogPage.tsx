@@ -1,7 +1,7 @@
 import { Box, Button, Paper, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { usePosStore } from "../store";
-import type { Product } from "../types";
+import { usePosStore } from "../../store";
+import type { Product } from "../../types";
 
 const products: Product[] = [
   { id: "latte", name: "Латте", price: 250, page: "drinks" },

@@ -5,6 +5,7 @@ export type Category = {
   name: string;
   slug: string;
   order: number;
+  is_addon?: boolean;
 };
 
 export type OrderStatus = "NEW" | "HANDOFF";
@@ -19,10 +20,13 @@ export type Product = {
 };
 
 export type CartLine = {
+  lineId: string;
   productId: string;
   name: string;
   price: number;
   qty: number;
+  categoryId?: number;
+  isAddon?: boolean;
 };
 
 export type Order = {
@@ -33,6 +37,7 @@ export type Order = {
   createdAt: number;
   lines: Record<string, CartLine>;
   isPaid: boolean;
+  lineOrder: string[];
 };
 
 export type OrderLine = {

@@ -55,10 +55,10 @@ export const api = {
     return fetchWithAuth(`${API_BASE}/categories`);
   },
 
-  async createCategory(name: string, slug: string): Promise<Category> {
+  async createCategory(name: string, slug: string, is_addon: boolean = false): Promise<Category> {
     return fetchWithAuth(`${API_BASE}/categories/create`, {
       method: "POST",
-      body: JSON.stringify({ name, slug }),
+      body: JSON.stringify({ name, slug, is_addon }),
     });
   },
 
@@ -67,6 +67,18 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
     });
+  },
+
+  async reorderCategories(categories: { id: number; order: number }[]): Promise<void> {
+    // Обновляем порядок каждой категории
+    await Promise.all(
+      categories.map(cat =>
+        fetchWithAuth(`${API_BASE}/categories/${cat.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ order: cat.order }),
+        })
+      )
+    );
   },
 
   async deleteCategory(id: number): Promise<{ success: boolean }> {

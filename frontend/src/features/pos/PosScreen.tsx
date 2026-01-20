@@ -2,15 +2,19 @@ import { useEffect, useState } from "react";
 import { Box, IconButton, Tooltip, Button } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ReceiptIcon from "@mui/icons-material/Receipt";
-import { TopBar } from "./components/TopBar";
-import { CartPanel } from "./components/CartPanel";
-import { CurrentOrderPanel } from "./components/CurrentOrderPanel";
-import { CatalogPanel } from "./components/CatalogPanel";
-import { OrdersPage } from "./components/OrdersPage";
+import SettingsIcon from "@mui/icons-material/Settings";
+import {
+  TopBar,
+  CartPanel,
+  CurrentOrderPanel,
+  CatalogPanel,
+  OrdersPage,
+  AdminPage,
+} from "./components";
 import { usePosStore } from "./store";
 import { useAuthStore } from "./authStore";
 
-type Page = "pos" | "orders";
+type Page = "pos" | "orders" | "admin";
 
 export function PosScreen() {
   const [currentPage, setCurrentPage] = useState<Page>("pos");
@@ -27,6 +31,10 @@ export function PosScreen() {
 
   if (currentPage === "orders") {
     return <OrdersPage onBack={() => setCurrentPage("pos")} />;
+  }
+
+  if (currentPage === "admin") {
+    return <AdminPage onBack={() => setCurrentPage("pos")} />;
   }
 
   return (
@@ -50,15 +58,22 @@ export function PosScreen() {
           <TopBar />
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2 }}>
             {isAdmin() && (
-              <Tooltip title="Заказы по датам">
-                <Button
-                  startIcon={<ReceiptIcon />}
-                  onClick={() => setCurrentPage("orders")}
-                  size="small"
-                >
-                  Заказы
-                </Button>
-              </Tooltip>
+              <>
+                <Tooltip title="Администрирование">
+                  <IconButton onClick={() => setCurrentPage("admin")} size="small">
+                    <SettingsIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Заказы по датам">
+                  <Button
+                    startIcon={<ReceiptIcon />}
+                    onClick={() => setCurrentPage("orders")}
+                    size="small"
+                  >
+                    Заказы
+                  </Button>
+                </Tooltip>
+              </>
             )}
             <Tooltip title={`${user?.username} (${user?.role === 'admin' ? 'Администратор' : 'Пользователь'})`}>
               <span style={{ fontSize: "0.875rem", color: "#666" }}>{user?.username}</span>

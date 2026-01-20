@@ -16,12 +16,6 @@ npm install
 cd ..
 ```
 
-### 2. (Опционально) Настройте Google Sheets
-
-Если хотите включить интеграцию с Google Sheets:
-1. Следуйте инструкциям в `backend/SETUP_GOOGLE_SHEETS.md`
-2. Отредактируйте `backend/app/config.py`
-
 ## Сборка
 
 ### Linux/macOS:

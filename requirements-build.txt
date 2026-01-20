@@ -2,10 +2,5 @@ Django==4.2.9
 django-cors-headers==4.3.1
 PyJWT==2.8.0
 
-google-auth==2.25.2
-google-auth-oauthlib==1.2.0
-google-auth-httplib2==0.2.0
-google-api-python-client==2.110.0
-
 # Для сборки
 pyinstaller==6.18.0

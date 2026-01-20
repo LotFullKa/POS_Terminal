@@ -6,7 +6,6 @@ for MIPT 6ka Coffee
 - Редактируемого меню с категориями
 - Отслеживания оплаты
 - Сохранения данных в локальную БД
-- Экспорта отчётов в Google Sheets
 
 ## 🚀 Быстрый старт (для разработки)
 
@@ -87,14 +86,6 @@ build.bat
 
 Просто запустите файл - приложение автоматически откроется в браузере.
 
-## ⚙️ Настройка Google Sheets (опционально)
-
-Для экспорта дневных отчётов в Google Sheets:
-
-1. Следуйте инструкциям в [`backend/SETUP_GOOGLE_SHEETS.md`](backend/SETUP_GOOGLE_SHEETS.md)
-2. Отредактируйте [`backend/app/config.py`](backend/app/config.py)
-3. Пересоберите приложение
-
 ## 📊 Функциональность
 
 ### Управление заказами
@@ -111,7 +102,6 @@ build.bat
 
 ### Закрытие дня
 - Сохранение всех заказов в локальную БД
-- Экспорт сводки в Google Sheets
 - Подсчёт выручки и статистики
 
 ## 🗄️ База данных
@@ -131,11 +121,8 @@ build.bat
 - Vite
 
 ### Backend
-- FastAPI
-- SQLAlchemy
+- Django
 - SQLite
-- Uvicorn
-- Google Sheets API
 
 ### Сборка
 - PyInstaller
@@ -163,8 +150,3 @@ MIT
 ### Ошибка при сборке
 - Убедитесь, что установлен PyInstaller: `pip install pyinstaller`
 - Проверьте версию Python (требуется 3.10+)
-
-### Google Sheets не работает
-- Проверьте настройки в `backend/app/config.py`
-- Убедитесь, что Service Account имеет доступ к таблице
-- См. подробности в `backend/SETUP_GOOGLE_SHEETS.md`

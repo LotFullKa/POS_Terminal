@@ -5,7 +5,6 @@ from django.views.decorators.http import require_http_methods
 import json
 
 from .models import DailySummary, Order, OrderLine
-from .sheets_service import get_sheets_service
 
 
 @require_http_methods(["GET"])
@@ -81,18 +80,6 @@ def end_day(request):
                     qty=line_data["qty"],
                 )
 
-        saved_to_db = True
-
-        # Отправляем в Google Sheets
-        sheets_service = get_sheets_service()
-        saved_to_sheets = sheets_service.append_daily_report(
-            date=today,
-            total_revenue=total_revenue,
-            total_orders=total_orders,
-            paid_orders=paid_orders,
-            unpaid_orders=unpaid_orders,
-        )
-
         return JsonResponse(
             {
                 "success": True,
@@ -101,8 +88,6 @@ def end_day(request):
                 "total_orders": total_orders,
                 "paid_orders": paid_orders,
                 "unpaid_orders": unpaid_orders,
-                "saved_to_db": saved_to_db,
-                "saved_to_sheets": saved_to_sheets,
                 "message": f"День {today} успешно закрыт. Выручка: {total_revenue:.2f} ₽",
             }
         )

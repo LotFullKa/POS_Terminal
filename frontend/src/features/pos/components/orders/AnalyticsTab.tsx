@@ -86,8 +86,15 @@ export function AnalyticsTab() {
     return null;
   }
 
-  const { summary, revenue_by_day, top_products, hourly_stats, weekday_stats } =
+  const { summary, revenue_by_day, top_products, hourly_stats, weekday_stats, queue_stats } =
     analytics;
+
+  // Форматирование времени из секунд в минуты:секунды
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -148,6 +155,21 @@ export function AnalyticsTab() {
             </Typography>
           </CardContent>
         </Card>
+        {queue_stats.total_orders_with_time > 0 && (
+          <Card sx={{ flex: "1 1 200px" }}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                ⏱️ Среднее время в очереди
+              </Typography>
+              <Typography variant="h5">
+                {formatTime(queue_stats.avg_time)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Мин: {formatTime(queue_stats.min_time)} | Макс: {formatTime(queue_stats.max_time)}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
       </Box>
 
       {/* График выручки по дням */}
@@ -301,6 +323,29 @@ export function AnalyticsTab() {
             </Typography>
           </Box>
         </Paper>
+
+        {/* Статистика по времени обработки */}
+        {queue_stats.total_orders_with_time > 0 && (
+          <Paper sx={{ p: 3, flex: "1 1 400px" }}>
+            <Typography variant="h6" gutterBottom>
+              Время обработки заказов
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                📊 Всего заказов с данными: {queue_stats.total_orders_with_time}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                ⏱️ Среднее время: {formatTime(queue_stats.avg_time)}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                🟢 Минимальное: {formatTime(queue_stats.min_time)}
+              </Typography>
+              <Typography variant="body1">
+                🔴 Максимальное: {formatTime(queue_stats.max_time)}
+              </Typography>
+            </Box>
+          </Paper>
+        )}
       </Box>
     </Box>
   );

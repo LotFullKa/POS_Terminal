@@ -59,6 +59,15 @@ def end_day(request):
             lines = order_data.get("lines", {})
             order_total = sum(line["price"] * line["qty"] for line in lines.values())
 
+            # Преобразуем timestamps в datetime
+            queued_at = None
+            if order_data.get("queuedAt"):
+                queued_at = datetime.fromtimestamp(order_data["queuedAt"] / 1000)
+
+            handoff_at = None
+            if order_data.get("handoffAt"):
+                handoff_at = datetime.fromtimestamp(order_data["handoffAt"] / 1000)
+
             order = Order.objects.create(
                 order_id=order_data["id"],
                 name=order_data["name"],
@@ -67,6 +76,8 @@ def end_day(request):
                 total=order_total,
                 is_paid=order_data.get("isPaid", False),
                 created_at=datetime.fromtimestamp(order_data["createdAt"] / 1000),
+                queued_at=queued_at,
+                handoff_at=handoff_at,
                 daily_summary=daily_summary,
             )
 

@@ -88,6 +88,8 @@ class Order(models.Model):
     total = models.FloatField()
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField()
+    queued_at = models.DateTimeField(null=True, blank=True)  # Время попадания в очередь
+    handoff_at = models.DateTimeField(null=True, blank=True)  # Время отдачи заказа
     daily_summary = models.ForeignKey(
         DailySummary, on_delete=models.CASCADE, related_name="orders"
     )

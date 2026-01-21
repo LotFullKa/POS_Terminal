@@ -35,6 +35,8 @@ export type Order = {
   comment: string;
   status: OrderStatus;
   createdAt: number;
+  queuedAt?: number; // Время когда заказ попал в очередь
+  handoffAt?: number; // Время когда заказ был отдан
   lines: Record<string, CartLine>;
   isPaid: boolean;
   lineOrder: string[];
@@ -92,6 +94,13 @@ export type WeekdayStat = {
   avg_check: number;
 };
 
+export type QueueStats = {
+  avg_time: number;
+  min_time: number;
+  max_time: number;
+  total_orders_with_time: number;
+};
+
 export type AnalyticsResponse = {
   period: {
     start_date: string;
@@ -110,4 +119,5 @@ export type AnalyticsResponse = {
   top_products: TopProduct[];
   hourly_stats: HourlyStat[];
   weekday_stats: WeekdayStat[];
+  queue_stats: QueueStats;
 };

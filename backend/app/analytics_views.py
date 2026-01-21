@@ -115,6 +115,31 @@ def get_analytics(request):
             for day, data in sorted(orders_by_weekday.items())
         ]
 
+        # Статистика по времени обработки заказов
+        processing_times = []
+        for order in all_orders:
+            if order.queued_at and order.handoff_at:
+                # Вычисляем время в секундах
+                processing_time = (order.handoff_at - order.queued_at).total_seconds()
+                processing_times.append(processing_time)
+
+        # Вычисляем статистику по времени
+        queue_stats = {}
+        if processing_times:
+            queue_stats = {
+                "avg_time": sum(processing_times) / len(processing_times),
+                "min_time": min(processing_times),
+                "max_time": max(processing_times),
+                "total_orders_with_time": len(processing_times),
+            }
+        else:
+            queue_stats = {
+                "avg_time": 0,
+                "min_time": 0,
+                "max_time": 0,
+                "total_orders_with_time": 0,
+            }
+
         return JsonResponse(
             {
                 "period": {
@@ -134,6 +159,7 @@ def get_analytics(request):
                 "top_products": top_products,
                 "hourly_stats": hourly_stats,
                 "weekday_stats": weekday_stats,
+                "queue_stats": queue_stats,
             }
         )
     except Exception as e:

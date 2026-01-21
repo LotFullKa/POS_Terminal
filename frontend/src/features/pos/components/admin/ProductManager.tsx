@@ -47,6 +47,7 @@ export function ProductManager() {
     category_id: "",
   });
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
+  const [filterCategoryId, setFilterCategoryId] = useState<string>("all");
 
   const products = usePosStore((s) => s.products);
   const categories = usePosStore((s) => s.categories);
@@ -132,6 +133,11 @@ export function ProductManager() {
     }
   };
 
+  // Фильтруем продукты по выбранной категории
+  const filteredProducts = filterCategoryId === "all"
+    ? localProducts
+    : localProducts.filter(p => String(p.category_id) === filterCategoryId);
+
   return (
     <Box>
       <Paper sx={{ p: 2, mb: 3 }}>
@@ -186,16 +192,33 @@ export function ProductManager() {
         </Box>
       </Paper>
 
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Список продуктов ({localProducts.length})
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h6">
+          Список продуктов ({filteredProducts.length} из {localProducts.length})
+        </Typography>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Фильтр по категории</InputLabel>
+          <Select
+            value={filterCategoryId}
+            label="Фильтр по категории"
+            onChange={(e) => setFilterCategoryId(e.target.value)}
+          >
+            <MenuItem value="all">Все категории</MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat.id} value={String(cat.id)}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
       <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: "block" }}>
         Перетаскивайте продукты для изменения порядка отображения
       </Typography>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleProductDragEnd}>
-        <SortableContext items={localProducts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={filteredProducts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           <List>
-            {localProducts.map((product) => {
+            {filteredProducts.map((product) => {
               const category = categories.find((c) => c.id === product.category_id);
               return (
                 <SortableProductItem

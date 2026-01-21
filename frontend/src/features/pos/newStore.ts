@@ -71,6 +71,7 @@ export const usePosStore = create<State>()((set, get) => ({
       comment: "",
       status: "NEW",
       createdAt: Date.now(),
+      queuedAt: undefined, // Еще не в очереди
       lines: {},
       isPaid: false,
       lineOrder: [],
@@ -82,9 +83,20 @@ export const usePosStore = create<State>()((set, get) => ({
   selectOrder: (id) => set({ currentOrderId: id }),
 
   setOrderStatus: (id, status) =>
-    set((s) => ({
-      orders: { ...s.orders, [id]: { ...s.orders[id], status } },
-    })),
+    set((s) => {
+      const order = s.orders[id];
+      if (!order) return s;
+
+      // Если меняем статус на HANDOFF, сохраняем время отдачи
+      const updates: Partial<Order> = { status };
+      if (status === "HANDOFF" && !order.handoffAt) {
+        updates.handoffAt = Date.now();
+      }
+
+      return {
+        orders: { ...s.orders, [id]: { ...order, ...updates } },
+      };
+    }),
 
   setOrderName: (id, name) =>
     set((s) => ({
@@ -107,6 +119,7 @@ export const usePosStore = create<State>()((set, get) => ({
           comment: "",
           status: "NEW",
           createdAt: Date.now(),
+          queuedAt: undefined,
           lines: {},
           isPaid: false,
           lineOrder: [],
@@ -194,7 +207,20 @@ export const usePosStore = create<State>()((set, get) => ({
     })),
 
   moveToQueueAndCreateNew: () => {
-    // Заказ уже в статусе NEW (очередь), просто создаем новый заказ
+    const s = get();
+    if (s.currentOrderId && s.orders[s.currentOrderId]) {
+      // Устанавливаем время попадания в очередь
+      set((state) => ({
+        orders: {
+          ...state.orders,
+          [s.currentOrderId!]: {
+            ...state.orders[s.currentOrderId!],
+            queuedAt: Date.now(),
+          },
+        },
+      }));
+    }
+    // Создаем новый заказ
     return get().newOrder();
   },
 

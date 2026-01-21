@@ -6,6 +6,7 @@ import {
 import InfoIcon from "@mui/icons-material/Info";
 import { usePosStore } from "../../store";
 import { OrderCard } from "./OrderCard";
+import { OrderTimer } from "./OrderTimer";
 import { EndDayButton } from "../shared/EndDayButton";
 import { useState, useEffect, useRef } from "react";
 
@@ -61,7 +62,7 @@ export function CartPanel() {
 
   const filteredOrders = Object.values(orders)
     .filter((o) => o.status === statusFilter)
-    .sort((a, b) => b.createdAt - a.createdAt);
+    .sort((a, b) => a.createdAt - b.createdAt); // Сортировка от старого к новому
 
   return (
     <Box sx={{ height: "100vh", p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -105,9 +106,12 @@ export function CartPanel() {
                   >
                   <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {o.name}
-                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {o.name}
+                        </Typography>
+                        <OrderTimer queuedAt={o.queuedAt} handoffAt={o.handoffAt} status={o.status} />
+                      </Box>
                       <Typography variant="caption" color="text.secondary">
                         {new Date(o.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} • {money(orderTotal)} ₽
                         {o.isPaid && " • ✓ Оплачен"}

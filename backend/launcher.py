@@ -80,25 +80,48 @@ def run_django_server():
 
 
 def run():
-    # Запускаем Django сервер в отдельном потоке
-    t = threading.Thread(target=run_django_server, daemon=True)
-    t.start()
-
-    # Ждём, пока сервер поднимется
-    health_url = f"http://{HOST}:{PORT}/api/health"
-    if not wait_until_ready(health_url, timeout_sec=10):
-        print("Server did not start in time.")
-        return
-
-    # Открываем браузер
-    webbrowser.open(f"http://{HOST}:{PORT}/")
-
     try:
-        # Держим процесс живым
-        while t.is_alive():
-            time.sleep(0.5)
-    except KeyboardInterrupt:
-        print("\nЗавершение работы...")
+        print("🚀 Запуск CashMachine...")
+        print(f"📍 Сервер будет доступен по адресу: http://{HOST}:{PORT}/")
+
+        # Запускаем Django сервер в отдельном потоке
+        t = threading.Thread(target=run_django_server, daemon=True)
+        t.start()
+
+        # Ждём, пока сервер поднимется
+        print("⏳ Ожидание запуска сервера...")
+        health_url = f"http://{HOST}:{PORT}/api/health"
+        if not wait_until_ready(health_url, timeout_sec=10):
+            print("❌ Сервер не запустился в течение 10 секунд.")
+            print("Нажмите Enter для выхода...")
+            input()
+            return
+
+        print("✅ Сервер запущен успешно!")
+        print("🌐 Открываем браузер...")
+
+        # Открываем браузер
+        webbrowser.open(f"http://{HOST}:{PORT}/")
+
+        print("\n" + "=" * 50)
+        print("CashMachine работает!")
+        print(f"Адрес: http://{HOST}:{PORT}/")
+        print("Для остановки нажмите Ctrl+C или закройте это окно")
+        print("=" * 50 + "\n")
+
+        try:
+            # Держим процесс живым
+            while t.is_alive():
+                time.sleep(0.5)
+        except KeyboardInterrupt:
+            print("\n⏹️  Завершение работы...")
+    except Exception as e:
+        print(f"\n❌ Критическая ошибка: {e}")
+        import traceback
+
+        traceback.print_exc()
+        print("\nНажмите Enter для выхода...")
+        input()
 
 
 if __name__ == "__main__":

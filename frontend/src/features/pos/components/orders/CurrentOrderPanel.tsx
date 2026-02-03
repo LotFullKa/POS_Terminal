@@ -1,10 +1,13 @@
 import {
   Box, Typography, List, ListItem, ListItemText,
-  IconButton, Divider, Button, TextField
+  IconButton, Divider, Button, TextField, Alert, Checkbox
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { usePosStore } from "../../store";
 import { useRef } from "react";
 import {
@@ -85,11 +88,13 @@ export function CurrentOrderPanel() {
   const setOrderComment = usePosStore((s) => s.setOrderComment);
   const toggleOrderPaid = usePosStore((s) => s.toggleOrderPaid);
   const moveToQueueAndCreateNew = usePosStore((s) => s.moveToQueueAndCreateNew);
+  const newOrder = usePosStore((s) => s.newOrder);
 
   const incLine = usePosStore((s) => s.incLine);
   const decLine = usePosStore((s) => s.decLine);
   const cancelOrder = usePosStore((s) => s.cancelOrder);
   const reorderLines = usePosStore((s) => s.reorderLines);
+  const toggleLinePrepared = usePosStore((s) => s.toggleLinePrepared);
 
   const orderNameInputRef = useRef<HTMLInputElement>(null);
   const orderCommentInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +109,14 @@ export function CurrentOrderPanel() {
   const handleMoveToQueue = () => {
     if (!current) return;
     moveToQueueAndCreateNew();
+    setTimeout(() => {
+      orderNameInputRef.current?.focus();
+      orderNameInputRef.current?.select();
+    }, 0);
+  };
+
+  const handleNewOrder = () => {
+    newOrder();
     setTimeout(() => {
       orderNameInputRef.current?.focus();
       orderNameInputRef.current?.select();
@@ -127,7 +140,7 @@ export function CurrentOrderPanel() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id && current) {
+    if (over && active.id !== over.id && current && !isHandedOff) {
       const oldIndex = currentLines.findIndex((l) => l.lineId === active.id);
       const newIndex = currentLines.findIndex((l) => l.lineId === over.id);
 
@@ -140,6 +153,23 @@ export function CurrentOrderPanel() {
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ mb: 2 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<AddCircleOutlineIcon />}
+          onClick={handleNewOrder}
+          sx={{ mb: 1 }}
+        >
+          Новый заказ
+        </Button>
+      </Box>
+
+      {current && isHandedOff && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Заказ отдан. Редактирование недоступно.
+        </Alert>
+      )}
       {current && (
         <Box sx={{ mb: 2 }}>
           <TextField
@@ -184,6 +214,8 @@ export function CurrentOrderPanel() {
                 <ListItem
                   sx={{
                     pl: l.isAddon ? 4 : 2,
+                    textDecoration: l.isPrepared ? "line-through" : "none",
+                    opacity: l.isPrepared ? 0.6 : 1,
                   }}
                   secondaryAction={
                     !isHandedOff && (
@@ -195,6 +227,14 @@ export function CurrentOrderPanel() {
                     )
                   }
                 >
+                  <Checkbox
+                    size="small"
+                    checked={l.isPrepared || false}
+                    onChange={() => current && toggleLinePrepared(current.id, l.lineId)}
+                    icon={<RadioButtonUncheckedIcon />}
+                    checkedIcon={<CheckCircleIcon />}
+                    sx={{ mr: 1 }}
+                  />
                   <ListItemText
                     primary={
                       <Typography variant="body2" color={l.isAddon ? "text.secondary" : "text.primary"}>

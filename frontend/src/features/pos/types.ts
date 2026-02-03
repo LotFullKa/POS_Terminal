@@ -27,6 +27,7 @@ export type CartLine = {
   qty: number;
   categoryId?: number;
   isAddon?: boolean;
+  isPrepared?: boolean; // Отметка о том, что позиция приготовлена
 };
 
 export type Order = {

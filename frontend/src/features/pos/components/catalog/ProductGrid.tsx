@@ -8,9 +8,15 @@ export function ProductGrid() {
   const page = usePosStore((s) => s.page);
   const addToCurrent = usePosStore((s) => s.addToCurrent);
 
-  const currentCategory = categories.find((c) => c.slug === page);
+  // Фильтруем только основные категории (не добавки)
+  const mainCategories = categories.filter((c) => !c.is_addon);
+  const addonCategoryIds = categories.filter((c) => c.is_addon).map((c) => c.id);
+
+  const currentCategory = mainCategories.find((c) => c.slug === page);
+
+  // Исключаем продукты из категорий-добавок
   const filteredProducts = page === "all"
-    ? products.filter((p) => p.is_active)
+    ? products.filter((p) => p.is_active && p.category_id !== undefined && !addonCategoryIds.includes(p.category_id))
     : currentCategory
     ? products.filter((p) => p.category_id === currentCategory.id && p.is_active)
     : [];
@@ -31,9 +37,9 @@ export function ProductGrid() {
     );
   }
 
-  // Если выбран раздел "Все", группируем по категориям
+  // Если выбран раздел "Все", группируем по основным категориям
   if (page === "all") {
-    const productsByCategory = categories.map((category) => ({
+    const productsByCategory = mainCategories.map((category) => ({
       category,
       products: filteredProducts.filter((p) => p.category_id === category.id),
     })).filter((group) => group.products.length > 0);
@@ -47,7 +53,7 @@ export function ProductGrid() {
             </Typography>
             <Grid container spacing={1.2}>
               {categoryProducts.map((product) => (
-                <Grid key={product.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+                <Grid key={product.id} size={{ xs: 12, sm: 6, md: 3 }}>
                   <Button
                     fullWidth
                     variant="contained"
@@ -79,7 +85,7 @@ export function ProductGrid() {
   return (
     <Grid container spacing={1.2} sx={{ mt: 1 }}>
       {filteredProducts.map((product) => (
-        <Grid key={product.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+        <Grid key={product.id} size={{ xs: 12, sm: 6, md: 3 }}>
           <Button
             fullWidth
             variant="contained"

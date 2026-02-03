@@ -1,9 +1,11 @@
 import {
   Box, Paper, Typography, List, ListItem,
   IconButton, ToggleButton, ToggleButtonGroup,
-  Button
+  Button, Checkbox
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import { usePosStore } from "../../store";
 import { OrderCard } from "./OrderCard";
 import { OrderTimer } from "./OrderTimer";
@@ -20,6 +22,7 @@ export function CartPanel() {
   const currentOrderId = usePosStore((s) => s.currentOrderId);
   const selectOrder = usePosStore((s) => s.selectOrder);
   const setOrderStatus = usePosStore((s) => s.setOrderStatus);
+  const toggleLinePrepared = usePosStore((s) => s.toggleLinePrepared);
 
   const [viewOrder, setViewOrder] = useState<string | null>(null);
   const [handoffOrderId, setHandoffOrderId] = useState<string | null>(null);
@@ -28,9 +31,14 @@ export function CartPanel() {
   const handleDoubleClick = (orderId: string) => {
     if (statusFilter === "NEW") {
       const order = orders[orderId];
-      // Показываем кнопку только если заказ оплачен
+      // Проверяем, что заказ оплачен и все позиции приготовлены
       if (order?.isPaid) {
-        setHandoffOrderId(orderId);
+        const orderLines = order.lineOrder.map(id => order.lines[id]).filter(Boolean);
+        const allPrepared = orderLines.every(line => line.isPrepared);
+
+        if (allPrepared) {
+          setHandoffOrderId(orderId);
+        }
       }
     }
   };
@@ -39,8 +47,13 @@ export function CartPanel() {
     const order = orders[orderId];
     // Дополнительная проверка перед отправкой
     if (order?.isPaid) {
-      setOrderStatus(orderId, "HANDOFF");
-      setHandoffOrderId(null);
+      const orderLines = order.lineOrder.map(id => order.lines[id]).filter(Boolean);
+      const allPrepared = orderLines.every(line => line.isPrepared);
+
+      if (allPrepared) {
+        setOrderStatus(orderId, "HANDOFF");
+        setHandoffOrderId(null);
+      }
     }
   };
 
@@ -76,6 +89,8 @@ export function CartPanel() {
           {filteredOrders.map((o) => {
             const orderLines = o.lineOrder.map(id => o.lines[id]).filter(Boolean);
             const orderTotal = orderLines.reduce((sum, l) => sum + l.price * l.qty, 0);
+            const allPrepared = orderLines.every(line => line.isPrepared);
+            const preparedCount = orderLines.filter(line => line.isPrepared).length;
 
             return (
               <Box key={o.id} sx={{ mb: 1 }}>
@@ -107,14 +122,29 @@ export function CartPanel() {
                   <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
                     <Box sx={{ flex: 1 }}>
                       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {o.name}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {o.name}
+                          </Typography>
+                          {statusFilter === "NEW" && allPrepared && o.isPaid && (
+                            <Typography variant="caption" sx={{
+                              bgcolor: "success.main",
+                              color: "success.contrastText",
+                              px: 0.5,
+                              py: 0.25,
+                              borderRadius: 0.5,
+                              fontWeight: 700
+                            }}>
+                              Готов
+                            </Typography>
+                          )}
+                        </Box>
                         <OrderTimer queuedAt={o.queuedAt} handoffAt={o.handoffAt} status={o.status} />
                       </Box>
                       <Typography variant="caption" color="text.secondary">
                         {new Date(o.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} • {money(orderTotal)} ₽
                         {o.isPaid && " • ✓ Оплачен"}
+                        {statusFilter === "NEW" && ` • ${preparedCount}/${orderLines.length} готово`}
                       </Typography>
                     </Box>
                     <IconButton
@@ -148,17 +178,33 @@ export function CartPanel() {
                         key={l.lineId}
                         sx={{
                           display: "flex",
+                          alignItems: "center",
                           justifyContent: "space-between",
                           py: 0.5,
                           px: 1,
                           pl: l.isAddon ? 3 : 1,
                           "&:hover": { bgcolor: "action.hover" },
                           borderRadius: 0.5,
+                          textDecoration: l.isPrepared ? "line-through" : "none",
+                          opacity: l.isPrepared ? 0.6 : 1,
                         }}
                       >
-                        <Typography variant="caption" color={l.isAddon ? "text.secondary" : "text.primary"}>
-                          {l.isAddon ? `+ ${l.name}` : l.name} × {l.qty}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flex: 1 }}>
+                          <Checkbox
+                            size="small"
+                            checked={l.isPrepared || false}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleLinePrepared(o.id, l.lineId);
+                            }}
+                            icon={<RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />}
+                            checkedIcon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
+                            sx={{ p: 0, mr: 0.5 }}
+                          />
+                          <Typography variant="caption" color={l.isAddon ? "text.secondary" : "text.primary"}>
+                            {l.isAddon ? `+ ${l.name}` : l.name} × {l.qty}
+                          </Typography>
+                        </Box>
                         <Typography variant="caption" sx={{ fontWeight: 600 }} color={l.isAddon ? "text.secondary" : "text.primary"}>
                           {money(l.price * l.qty)} ₽
                         </Typography>

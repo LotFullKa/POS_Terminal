@@ -30,6 +30,7 @@ type State = {
   clearCurrent: () => void;
   cancelOrder: (id: string) => void;
   reorderLines: (orderId: string, productIds: string[]) => void;
+  toggleLinePrepared: (orderId: string, lineId: string) => void;
 
   products: Product[];
   categories: Category[];
@@ -125,6 +126,12 @@ export const usePosStore = create<State>()((set, get) => ({
           lineOrder: [],
         } as Order);
 
+      // Запрещаем добавление товаров в отданные заказы
+      if (order.status === "HANDOFF") {
+        console.warn("Cannot add items to a handed off order");
+        return s;
+      }
+
       // Проверяем, является ли категория товара добавкой
       const category = s.categories.find(c => c.id === p.category_id);
       const isAddon = category?.is_addon || false;
@@ -159,6 +166,13 @@ export const usePosStore = create<State>()((set, get) => ({
       const o = s.orders[s.currentOrderId];
       const line = o?.lines[lineId];
       if (!o || !line) return s;
+
+      // Запрещаем изменение количества в отданных заказах
+      if (o.status === "HANDOFF") {
+        console.warn("Cannot modify items in a handed off order");
+        return s;
+      }
+
       return {
         orders: {
           ...s.orders,
@@ -176,6 +190,12 @@ export const usePosStore = create<State>()((set, get) => ({
       const o = s.orders[s.currentOrderId];
       const line = o?.lines[lineId];
       if (!o || !line) return s;
+
+      // Запрещаем изменение количества в отданных заказах
+      if (o.status === "HANDOFF") {
+        console.warn("Cannot modify items in a handed off order");
+        return s;
+      }
 
       const lines = { ...o.lines };
       let lineOrder = o.lineOrder;
@@ -243,6 +263,28 @@ export const usePosStore = create<State>()((set, get) => ({
         orders: {
           ...s.orders,
           [orderId]: { ...order, lineOrder: lineIds }
+        }
+      };
+    }),
+
+  toggleLinePrepared: (orderId, lineId) =>
+    set((s) => {
+      const order = s.orders[orderId];
+      if (!order) return s;
+
+      const line = order.lines[lineId];
+      if (!line) return s;
+
+      return {
+        orders: {
+          ...s.orders,
+          [orderId]: {
+            ...order,
+            lines: {
+              ...order.lines,
+              [lineId]: { ...line, isPrepared: !line.isPrepared }
+            }
+          }
         }
       };
     }),

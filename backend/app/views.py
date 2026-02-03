@@ -22,40 +22,56 @@ def end_day(request):
 
         today = datetime.now().strftime("%Y-%m-%d")
 
-        # Проверяем, не закрыт ли уже день
-        if DailySummary.objects.filter(date=today).exists():
+        # Получаем или создаём дневную сводку
+        daily_summary, created = DailySummary.objects.get_or_create(
+            date=today, defaults={"total_revenue": 0.0, "total_orders": 0}
+        )
+
+        # Получаем список уже сохранённых order_id для этого дня
+        existing_order_ids = set(
+            Order.objects.filter(daily_summary=daily_summary).values_list(
+                "order_id", flat=True
+            )
+        )
+
+        # Фильтруем только новые заказы
+        new_orders_data = [
+            order_data
+            for order_data in orders_data
+            if order_data["id"] not in existing_order_ids
+        ]
+
+        if not new_orders_data:
             return JsonResponse(
                 {
-                    "success": False,
-                    "message": f"День {today} уже закрыт. Удалите запись из БД если хотите закрыть заново.",
-                },
-                status=400,
+                    "success": True,
+                    "date": today,
+                    "total_revenue": daily_summary.total_revenue,
+                    "total_orders": daily_summary.total_orders,
+                    "paid_orders": 0,
+                    "unpaid_orders": 0,
+                    "new_orders_count": 0,
+                    "message": f"Все заказы за {today} уже сохранены. Новых заказов нет.",
+                }
             )
 
-        # Подсчитываем статистику
-        total_revenue = 0.0
+        # Подсчитываем статистику только для новых заказов
+        new_revenue = 0.0
         paid_orders = 0
         unpaid_orders = 0
 
-        for order_data in orders_data:
+        for order_data in new_orders_data:
             lines = order_data.get("lines", {})
             order_total = sum(line["price"] * line["qty"] for line in lines.values())
-            total_revenue += order_total
+            new_revenue += order_total
 
             if order_data.get("isPaid", False):
                 paid_orders += 1
             else:
                 unpaid_orders += 1
 
-        total_orders = len(orders_data)
-
-        # Создаём запись дневной сводки
-        daily_summary = DailySummary.objects.create(
-            date=today, total_revenue=total_revenue, total_orders=total_orders
-        )
-
-        # Сохраняем заказы
-        for order_data in orders_data:
+        # Сохраняем новые заказы
+        for order_data in new_orders_data:
             lines = order_data.get("lines", {})
             order_total = sum(line["price"] * line["qty"] for line in lines.values())
 
@@ -91,19 +107,35 @@ def end_day(request):
                     qty=line_data["qty"],
                 )
 
+        # Обновляем дневную сводку
+        all_orders = Order.objects.filter(daily_summary=daily_summary)
+        daily_summary.total_revenue = sum(o.total for o in all_orders if o.is_paid)
+        daily_summary.total_orders = all_orders.count()
+        daily_summary.save()
+
+        message = f"День {today} успешно закрыт."
+        if created:
+            message += f" Сохранено {len(new_orders_data)} заказов. Выручка: {daily_summary.total_revenue:.2f} ₽"
+        else:
+            message += f" Добавлено {len(new_orders_data)} новых заказов. Общая выручка: {daily_summary.total_revenue:.2f} ₽"
+
         return JsonResponse(
             {
                 "success": True,
                 "date": today,
-                "total_revenue": total_revenue,
-                "total_orders": total_orders,
+                "total_revenue": daily_summary.total_revenue,
+                "total_orders": daily_summary.total_orders,
                 "paid_orders": paid_orders,
                 "unpaid_orders": unpaid_orders,
-                "message": f"День {today} успешно закрыт. Выручка: {total_revenue:.2f} ₽",
+                "new_orders_count": len(new_orders_data),
+                "message": message,
             }
         )
 
     except Exception as e:
+        import traceback
+
+        traceback.print_exc()
         return JsonResponse(
             {"success": False, "message": f"Ошибка при закрытии дня: {str(e)}"},
             status=500,

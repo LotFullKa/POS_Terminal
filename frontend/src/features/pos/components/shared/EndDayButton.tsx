@@ -10,7 +10,6 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { usePosStore } from "../../store";
 
 const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
@@ -27,6 +26,7 @@ export function EndDayButton() {
       total_orders: number;
       paid_orders: number;
       unpaid_orders: number;
+      new_orders_count?: number;
       saved_to_db: boolean;
       saved_to_sheets: boolean;
     };
@@ -167,20 +167,6 @@ export function EndDayButton() {
 
               {result.success && result.data && (
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <CheckCircleIcon
-                      sx={{ fontSize: 16, verticalAlign: "middle", mr: 0.5 }}
-                    />
-                    Сохранено в БД: {result.data.saved_to_db ? "Да" : "Нет"}
-                  </Typography>
-                  <Typography variant="body2">
-                    <CheckCircleIcon
-                      sx={{ fontSize: 16, verticalAlign: "middle", mr: 0.5 }}
-                    />
-                    Отправлено в Google Sheets:{" "}
-                    {result.data.saved_to_sheets ? "Да" : "Нет"}
-                  </Typography>
-
                   <Box
                     sx={{
                       mt: 2,
@@ -196,8 +182,13 @@ export function EndDayButton() {
                       Выручка: <strong>{money(result.data.total_revenue)} ₽</strong>
                     </Typography>
                     <Typography variant="body2">
-                      Заказов: <strong>{result.data.total_orders}</strong>
+                      Всего заказов: <strong>{result.data.total_orders}</strong>
                     </Typography>
+                    {result.data.new_orders_count !== undefined && (
+                      <Typography variant="body2" sx={{ mt: 1, color: "success.dark" }}>
+                        Добавлено новых: <strong>{result.data.new_orders_count}</strong>
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               )}
